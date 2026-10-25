@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import type {
+  KeyboardCapabilities,
   KeyboardEffect,
   KeyboardState,
   Profile,
@@ -18,6 +19,8 @@ import { KeyboardDiagram } from "./KeyboardDiagram";
 
 interface KeyboardLightingProps {
   state: KeyboardState | null;
+  capabilities?: KeyboardCapabilities | null;
+  present: boolean;
   effects: KeyboardEffect[];
   profile: Profile;
   applied: string;
@@ -39,6 +42,8 @@ function rainbow(slot: number, factor: number): string {
 
 export function KeyboardLighting({
   state,
+  capabilities,
+  present,
   effects,
   profile,
   applied,
@@ -63,11 +68,14 @@ export function KeyboardLighting({
     if (state.full_rgb != null) setFullRgb(state.full_rgb);
   }, [state, profile]);
 
+  const brightnessMax = capabilities?.brightness_max ?? 5;
+  const speedMin = capabilities?.speed_min ?? 1;
+  const speedMax = capabilities?.speed_max ?? 5;
   const meta = effects.find((e) => e.id === effect);
   const hasColor = meta?.has_color ?? false;
   const hasDirection = meta?.has_direction ?? false;
-  const isCustom = effect === CUSTOM_EFFECT_ID;
-  const factor = brightness / 5;
+  const isCustom = effect === (capabilities?.custom_effect ?? CUSTOM_EFFECT_ID);
+  const factor = brightness / brightnessMax;
 
   const colorAt = (slot: number): string => {
     if (brightness === 0) return "#141519";
@@ -84,9 +92,9 @@ export function KeyboardLighting({
           r: color[0],
           g: color[1],
           b: color[2],
-          brightness,
-          speed,
-          direction,
+          brightness: Math.min(brightness, brightnessMax),
+          speed: Math.min(Math.max(speed, speedMin), speedMax),
+          direction: hasDirection ? direction : 0,
           full_rgb: fullRgb,
         }),
       applied,
@@ -98,9 +106,9 @@ export function KeyboardLighting({
     <div className="tabgrid tabgrid--kbd">
       <Panel
         title="Iluminação"
-        subtitle={`Efeito de luz do Perfil ${profile}`}
+        subtitle={capabilities?.profiles === 1 ? "USB keyboard lighting" : `Efeito de luz do Perfil ${profile}`}
         actions={
-          <button type="button" className="btn btn--primary" onClick={apply}>
+          <button type="button" className="btn btn--primary" onClick={apply} disabled={!present || !state?.present || !effects.some((e) => e.id === effect)}>
             Aplicar
           </button>
         }
@@ -158,27 +166,27 @@ export function KeyboardLighting({
         <Field label="Brilho">
           <Slider
             min={0}
-            max={5}
-            value={brightness}
+            max={brightnessMax}
+            value={Math.min(brightness, brightnessMax)}
             onChange={setBrightness}
-            format={(v) => `${v}/5`}
+            format={(v) => `${v}/${brightnessMax}`}
           />
         </Field>
 
         <Field label="Velocidade" hint="Menor = mais rápido">
           <Slider
-            min={1}
-            max={5}
-            value={speed}
+            min={speedMin}
+            max={speedMax}
+            value={Math.min(Math.max(speed, speedMin), speedMax)}
             onChange={setSpeed}
-            format={(v) => `${v}/5`}
+            format={(v) => `${v}/${speedMax}`}
           />
         </Field>
       </Panel>
 
       <Panel title="Pré-visualização" className="preview-panel">
         <div className="preview-stage preview-stage--kbd">
-          <KeyboardDiagram colorAt={colorAt} />
+          <KeyboardDiagram colorAt={colorAt} layout={capabilities?.layout ?? undefined} aspect={capabilities?.layout_aspect ?? undefined} />
         </div>
       </Panel>
     </div>

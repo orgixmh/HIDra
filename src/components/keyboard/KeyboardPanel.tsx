@@ -1,4 +1,4 @@
-import type { KeyboardEffect, KeyboardState, Profile } from "../../types";
+import type { KeyboardCapabilities, KeyboardEffect, KeyboardState, Profile } from "../../types";
 import { useLocalStorage } from "../../hooks";
 import { Tabs } from "../ui/Tabs";
 import type { TabItem } from "../ui/Tabs";
@@ -18,6 +18,7 @@ const TABS: TabItem<KeyboardTab>[] = [
 
 interface KeyboardPanelProps {
   state: KeyboardState | null;
+  capabilities?: KeyboardCapabilities | null;
   effects: KeyboardEffect[];
   /** Model of the keyboard that was found, or a generic label when none is. */
   name: string;
@@ -30,6 +31,7 @@ interface KeyboardPanelProps {
 
 export function KeyboardPanel({
   state,
+  capabilities,
   effects,
   name,
   present,
@@ -40,17 +42,24 @@ export function KeyboardPanel({
 }: KeyboardPanelProps) {
   const [tab, setTab] = useLocalStorage<KeyboardTab>("hidra.keyboardTab", "led");
 
+  const tabs = TABS.filter((t) =>
+    t.id === "led" ||
+    (t.id === "perkey" && (capabilities?.per_key ?? true)) ||
+    (t.id === "remap" && (capabilities?.remap ?? true)) ||
+    (t.id === "profiles" && (capabilities?.profiles ?? 3) > 1));
+  const active = tabs.some((t) => t.id === tab) ? tab : "led";
+
   return (
     <div className="workspace">
       <div className="workspace__top">
         <div className="workspace__heading">
           <h1>{name}</h1>
-          <span className="chip chip--muted">Perfil {profile}</span>
+          {(capabilities?.profiles ?? 3) > 1 && <span className="chip chip--muted">Perfil {profile}</span>}
           <span className={`chip${present ? " chip--on" : " chip--off"}`}>
             {present ? "Conectado" : "Desconectado"}
           </span>
         </div>
-        <Tabs tabs={TABS} active={tab} onChange={setTab} />
+        <Tabs tabs={tabs} active={active} onChange={setTab} />
       </div>
 
       {!present && (
@@ -60,19 +69,22 @@ export function KeyboardPanel({
         </p>
       )}
 
+      {capabilities?.remap === false && <p className="note">Lighting and per-key colours are available over USB. Key remapping and profile switching are not supported yet.</p>}
       <div className="workspace__body">
-        {tab === "led" && (
+        {active === "led" && (
           <KeyboardLighting
             state={state}
+            capabilities={capabilities}
+            present={present}
             effects={effects}
             profile={profile}
             applied={applied}
             onApplied={onApplied}
           />
         )}
-        {tab === "perkey" && <KeyboardPerKey profile={profile} applied={applied} />}
-        {tab === "remap" && <KeyboardRemap applied={applied} />}
-        {tab === "profiles" && (
+        {active === "perkey" && <KeyboardPerKey key={name} profile={profile} applied={applied} layout={capabilities?.layout ?? undefined} aspect={capabilities?.layout_aspect ?? undefined} present={present} />}
+        {active === "remap" && <KeyboardRemap applied={applied} />}
+        {active === "profiles" && (
           <KeyboardProfiles
             profile={profile}
             onProfile={onProfile}

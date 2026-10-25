@@ -33,6 +33,10 @@ START, END = "<!-- devices:start -->", "<!-- devices:end -->"
 
 # What a protocol gives the user, for the feature column. One line per protocol.
 FEATURES = {
+    "Sinowealth520": {
+        "en": "wired lighting, 18 effects + per-key colour (model identity checked); no remap/profiles",
+        "pt": "iluminação via cabo, 18 efeitos + cor por tecla (modelo verificado); sem remapeamento/perfis",
+    },
     "Compx17": {
         "en": "lighting, DPI, buttons, polling",
         "pt": "iluminação, DPI, botões, polling",

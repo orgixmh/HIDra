@@ -158,3 +158,78 @@ macro name is UTF-16. Per-event repeat counts and delays are supported.
 
 The recipe that produced the keyboard notes above, on Linux with no second
 machine, is written up in [docs/ADDING-DEVICES.md](docs/ADDING-DEVICES.md).
+
+## SinoWealth keyboard — Redragon UCAL K673SP-RGB-PRO (USB cable)
+
+This is a separate protocol from the SONiX Brahma above. The shared `258A:010C`
+USB ID alone is not a model identifier. Interface 1 exposes usage page FF00,
+usage 1, with a 519-byte feature payload on report ID 6 (520 bytes including
+report ID). Other vendor collections use IDs 3 and 5 and are not configuration
+channels for this driver.
+
+### Sources and identification
+
+- Official [K673SP download page](https://redragonshop.com/blogs/product-download/ucal-k673-pro-side-printed-pbt-keycaps),
+  package `Redragon_K673RGB-PRO_Setup_v2.0_20240910.exe`.
+- Model data from `Dev/kb/PRO-MAX/KB.ini`: `Psd=3,0,0,0,0,ba`, brightness
+  and speed 0–4, LedOpt1–18, and the 81 visible key rectangles/matrix slots.
+  The other `PRO` entry has identity ending in 73; it is **not** enabled.
+- Transport cross-checked against the [AULA capture notes](https://github.com/veysiemrah/aula-rgb-controller/blob/main/tools/protocol_notes.md)
+  and [DeetsRGB protocol documentation](https://github.com/deets-137/DeetsRGB/blob/main/docs/protocol.md).
+  Their model-specific effect maps must not be substituted for K673 data.
+
+The user's K673SP on Linux X11 returned model reply
+`06 82 01 00 01 00 06 00 03 00 00 00 00 BA` on 2026-10-25.
+Read-only queries also returned a 136-byte config reply ending in `5A A5`,
+and the complete 520-byte palette reply. These observations prove discovery
+and reads, not that a visual lighting change has been verified.
+
+### Framing and lighting
+
+Feature packets are `06 CMD ARG 00 01 00 LEN_LO LEN_HI DATA...`, zero-padded
+outbound to 520 bytes. A read first sends the query as SET_FEATURE, waits 50ms,
+and GET_FEATURE retrieves report 6. Validate the returned byte count and the
+entire eight-byte echoed header; reject short, zero or unrelated replies.
+
+| Query / write | ARG | Payload | Purpose |
+| --- | --- | --- | --- |
+| 82 / none | 1 | 6 | Full model signature; must match the table before configuration |
+| 84 / 04 | 0 | 128 | Lighting configuration, marker at payload offsets 126–127 |
+| 8A / 0A | 0 | 512 | Effect colour palette; seven RGB slots per effect |
+| 86 / 06 | 0 | 384 | Custom RGB planes, 126 bytes per channel plus preserved padding |
+
+Config payload offset 9 selects preset (0) or custom (1); offset 10 selects
+effect (0 off, 1–18 OEM effects, 21 custom). K673 effect parameters occupy
+pairs beginning at offset 58: brightness, then `(speed << 4) | colour-slot`.
+The device table explicitly records each effect's offset and capabilities.
+Slot 0 is user RGB; slots 1–6 are presets and slot 7 is rainbow. Palette RGB
+begins at `effect * 21 + colour-slot * 3`.
+
+Every write reads the complete existing block first, changes only the requested
+fields and preserves the rest. The config marker and full model signature are
+mandatory. Palette is saved before config; after a 60ms settle delay the driver
+reads the block back and compares it, returning an error on mismatch. No default
+block is written after a failed read. No firmware or bootloader commands exist.
+
+Custom colours use the OEM matrix slot, not Brahma's row order: channel bytes
+are `slot`, `126+slot`, `252+slot`. UI `off` is `slot*3` for compatibility with the
+existing colour editor. All requested offsets must exist in this model's table.
+Key remapping, macros, Bluetooth/receiver transport and profile switching are
+not implemented for this protocol; those controls are unavailable for K673.
+
+### Local validation
+
+Run the normal Rust tests without hardware. The ignored
+`sinowealth::tests::hardware_read_only` test opens the attached model and reads
+its settings/custom colour buffer without changing any settings. Hardware
+validation additionally requires applying a small brightness/colour change in
+the app, observing the keyboard, and reading/reopening the app to confirm it.
+Keep `Support::Reported` until the owner confirms the physical result.
+
+On 2026-10-25 the owner confirmed that both brightness and colour changes work
+on the physical K673SP-RGB-PRO, on Ubuntu 24.04.5 / X11. The Rust driver also
+passed a non-root hardware round trip: brightness 4 -> 3 was read back from the
+keyboard, then the complete original config was restored and compared. The
+384-byte custom-colour buffer was successfully read; per-key writes/layout have
+not yet been visually confirmed. `Support::Verified` records the owner's
+brightness/colour confirmation, not a claim that every effect or key was tested.

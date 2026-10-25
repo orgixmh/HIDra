@@ -49,6 +49,7 @@ Per-key colours, painted key by key and stored on the keyboard itself:
 | Redragon Cobra Pro (M711-PRO) — 2.4 GHz receiver | `25A7:FA07` | ✅ verified | lighting, DPI, buttons, polling |
 | Redragon Cobra Pro (M711-PRO) — cable | `25A7:FA08` | ✅ verified | lighting, DPI, buttons, polling |
 | Redragon Brahma Pro (K586RGB-PRO) | `0C45:5004` | ✅ verified | 18 effects + per-key colour, 3 profiles, key remap |
+| Redragon UCAL K673SP-RGB-PRO | `258A:010C` | ✅ verified | wired lighting, 18 effects + per-key colour (model identity checked); no remap/profiles |
 <!-- devices:end -->
 
 **Your device is not here?** HIDra is not a Redragon project — it started with

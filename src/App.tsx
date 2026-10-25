@@ -81,19 +81,28 @@ function AppShell() {
     [devices.keyboard, notify, setProfile],
   );
 
+  const caps = devices.keyboard_capabilities;
+  const keyboardProfile: Profile = caps?.profiles === 1 ? 1 : profile;
+
   // Initial load: devices + keyboard effect catalogue.
   useEffect(() => {
     refreshDevices();
+  }, [refreshDevices]);
+
+  useEffect(() => {
     keyboardEffects()
       .then(setEffects)
       .catch((e: unknown) => notify(String(e), "error"));
-  }, [refreshDevices, notify]);
+  }, [devices.keyboard_model, devices.keyboard, notify]);
 
   // Load the selected device's state when device/profile changes.
   useEffect(() => {
     if (selected === "mouse") loadMouse();
-    else loadKeyboard(profile);
-  }, [selected, profile, loadMouse, loadKeyboard]);
+    else {
+      setKeyboardState(null);
+      loadKeyboard(keyboardProfile);
+    }
+  }, [selected, keyboardProfile, devices.keyboard_model, devices.keyboard, loadMouse, loadKeyboard]);
 
   // Poll list_devices every 4s to keep the connection dots fresh.
   useEffect(() => {
@@ -155,14 +164,16 @@ function AppShell() {
           />
         ) : (
           <KeyboardPanel
+            key={devices.keyboard_model ?? "none"}
             state={keyboardState}
+            capabilities={caps}
             name={devices.keyboard_model ?? "Teclado"}
             effects={effects}
             present={devices.keyboard}
-            profile={profile}
+            profile={keyboardProfile}
             onProfile={selectProfile}
             applied="Aplicado"
-            onApplied={() => loadKeyboard(profile)}
+            onApplied={() => loadKeyboard(keyboardProfile)}
           />
         )}
       </main>

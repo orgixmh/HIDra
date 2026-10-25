@@ -6,7 +6,9 @@ mod devices;
 mod error;
 mod hid;
 mod keyboard;
+mod keyboard_driver;
 mod mouse;
+mod sinowealth;
 mod update;
 
 use error::Result;
@@ -30,6 +32,7 @@ fn with_api<T>(app: &App, f: impl FnOnce(&HidApi) -> T) -> T {
 #[derive(Serialize)]
 struct Presence {
     keyboard: bool,
+    keyboard_capabilities: Option<keyboard_driver::Capabilities>,
     mouse: bool,
     mouse_mode: Option<String>,
     /// What was actually found, straight from the device table, so the UI names
@@ -47,10 +50,11 @@ struct Presence {
 #[tauri::command]
 fn list_devices(app: State<App>) -> Presence {
     with_api(&app, |api| {
-        let kb = hid::find(api, hid::Kind::Keyboard);
+        let kb = keyboard_driver::find(api);
         let m = hid::find(api, hid::Kind::Mouse);
         Presence {
             keyboard: kb.is_some(),
+            keyboard_capabilities: keyboard_driver::capabilities(api),
             mouse: m.is_some(),
             mouse_mode: m.as_ref().map(|f| f.connection().to_string()),
             keyboard_untested: kb.as_ref().is_some_and(|f| f.untested()),
@@ -118,13 +122,13 @@ fn mouse_set_button(app: State<App>, index: usize, action: mouse::Action) -> Res
 // ---- Keyboard commands -------------------------------------------------
 
 #[tauri::command]
-fn keyboard_read_state(app: State<App>, profile: u8) -> keyboard::KbState {
-    with_api(&app, |api| keyboard::read_state(api, profile))
+fn keyboard_read_state(app: State<App>, profile: u8) -> Result<keyboard::KbState> {
+    with_api(&app, |api| keyboard_driver::read_state(api, profile))
 }
 
 #[tauri::command]
-fn keyboard_effects() -> Vec<keyboard::Effect> {
-    keyboard::effects()
+fn keyboard_effects(app: State<App>) -> Vec<keyboard::Effect> {
+    with_api(&app, keyboard_driver::effects)
 }
 
 // The JS side sends snake_case keys (e.g. `full_rgb`); tell Tauri to expect
@@ -144,7 +148,7 @@ fn keyboard_set_effect(
     full_rgb: bool,
 ) -> Result<()> {
     with_api(&app, |api| {
-        keyboard::set_effect(
+        keyboard_driver::set_effect(
             api, profile, effect, r, g, b, brightness, speed, direction, full_rgb,
         )
     })
@@ -152,47 +156,55 @@ fn keyboard_set_effect(
 
 #[tauri::command]
 fn keyboard_set_brightness(app: State<App>, profile: u8, value: u8) -> Result<()> {
-    with_api(&app, |api| keyboard::set_brightness(api, profile, value))
+    with_api(&app, |api| {
+        keyboard_driver::set_brightness(api, profile, value)
+    })
 }
 #[tauri::command]
 fn keyboard_set_speed(app: State<App>, profile: u8, value: u8) -> Result<()> {
-    with_api(&app, |api| keyboard::set_speed(api, profile, value))
+    with_api(&app, |api| keyboard_driver::set_speed(api, profile, value))
 }
 #[tauri::command]
 fn keyboard_set_direction(app: State<App>, profile: u8, left: bool) -> Result<()> {
-    with_api(&app, |api| keyboard::set_direction(api, profile, left))
+    with_api(&app, |api| {
+        keyboard_driver::set_direction(api, profile, left)
+    })
 }
 #[tauri::command]
 fn keyboard_set_full_rgb(app: State<App>, profile: u8, on: bool) -> Result<()> {
-    with_api(&app, |api| keyboard::set_full_rgb(api, profile, on))
+    with_api(&app, |api| keyboard_driver::set_full_rgb(api, profile, on))
 }
 #[tauri::command]
 fn keyboard_set_color(app: State<App>, profile: u8, r: u8, g: u8, b: u8) -> Result<()> {
-    with_api(&app, |api| keyboard::set_color(api, profile, r, g, b))
+    with_api(&app, |api| {
+        keyboard_driver::set_color(api, profile, r, g, b)
+    })
 }
 #[tauri::command]
 fn keyboard_set_mode(app: State<App>, profile: u8, effect: u8) -> Result<()> {
-    with_api(&app, |api| keyboard::set_mode(api, profile, effect))
+    with_api(&app, |api| keyboard_driver::set_mode(api, profile, effect))
 }
 #[tauri::command]
 fn keyboard_set_active_profile(app: State<App>, profile: u8) -> Result<()> {
-    with_api(&app, |api| keyboard::set_active_profile(api, profile))
+    with_api(&app, |api| {
+        keyboard_driver::set_active_profile(api, profile)
+    })
 }
 
 #[tauri::command]
-fn keyboard_remap_keys() -> Vec<keyboard::RemapKey> {
-    keyboard::remap_keys()
+fn keyboard_remap_keys(app: State<App>) -> Result<Vec<keyboard::RemapKey>> {
+    with_api(&app, keyboard_driver::remap_keys)
 }
 
 #[tauri::command]
 fn keyboard_remap(app: State<App>, index: usize, kind: String, code: u8, code2: u8) -> Result<()> {
-    let opt = keyboard::encode_remap(&kind, code, code2);
-    with_api(&app, |api| keyboard::remap(api, index, opt))
+    let opt = keyboard_driver::encode_remap(&kind, code, code2);
+    with_api(&app, |api| keyboard_driver::remap(api, index, opt))
 }
 
 #[tauri::command]
 fn keyboard_restore_keymap(app: State<App>) -> Result<()> {
-    with_api(&app, keyboard::restore_keymap)
+    with_api(&app, keyboard_driver::restore_keymap)
 }
 
 #[tauri::command]
@@ -201,7 +213,9 @@ fn keyboard_set_custom_colors(
     profile: u8,
     cells: Vec<keyboard::CustomCell>,
 ) -> Result<()> {
-    with_api(&app, |api| keyboard::set_custom_colors(api, profile, cells))
+    with_api(&app, |api| {
+        keyboard_driver::set_custom_colors(api, profile, cells)
+    })
 }
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]

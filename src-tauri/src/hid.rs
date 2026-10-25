@@ -186,6 +186,16 @@ impl Link {
         Ok(None)
     }
 
+    /// Feature transfers shared by protocols with variable-size packets.
+    pub fn feature_write(&self, data: &[u8]) -> Result<()> {
+        self.dev.send_feature_report(data)?;
+        Ok(())
+    }
+
+    pub fn feature_read(&self, data: &mut [u8]) -> Result<usize> {
+        Ok(self.dev.get_feature_report(data)?)
+    }
+
     // ---- mouse dialect: 17-byte feature reports, reply as input report 0x09 ----
 
     pub fn mouse_feature(&self, buf: &[u8; 17]) -> Result<()> {

@@ -9,6 +9,7 @@ export type MouseMode = "2.4g" | "wired";
 
 export interface ListDevices {
   keyboard: boolean;
+  keyboard_capabilities?: KeyboardCapabilities | null;
   mouse: boolean;
   mouse_mode: MouseMode | null;
   /** What was found, from the backend device table. */
@@ -103,4 +104,17 @@ export interface CustomCell {
   r: number;
   g: number;
   b: number;
+}
+
+/** Supported controls and geometry supplied by the selected device's driver. */
+export interface KeyboardCapabilities {
+  profiles: number;
+  remap: boolean;
+  per_key: boolean;
+  brightness_max: number;
+  speed_min: number;
+  speed_max: number;
+  custom_effect: number;
+  layout_aspect: number | null;
+  layout: import("./keyboardLayout").KeyCell[] | null;
 }

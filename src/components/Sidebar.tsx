@@ -101,7 +101,7 @@ export function Sidebar({
               )}
             </button>
 
-            {item.kind === "keyboard" && selected === "keyboard" && (
+            {item.kind === "keyboard" && selected === "keyboard" && devices.keyboard_capabilities?.profiles !== 1 && (
               <div className="profilepick">
                 <span className="profilepick__label">Perfil</span>
                 <SegmentedControl<Profile>

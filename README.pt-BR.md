@@ -42,6 +42,7 @@ Cores por tecla, pintadas uma a uma e gravadas no próprio teclado:
 | Redragon Cobra Pro (M711-PRO) — receptor 2.4 GHz | `25A7:FA07` | ✅ validado | iluminação, DPI, botões, polling |
 | Redragon Cobra Pro (M711-PRO) — cabo | `25A7:FA08` | ✅ validado | iluminação, DPI, botões, polling |
 | Redragon Brahma Pro (K586RGB-PRO) | `0C45:5004` | ✅ validado | 18 efeitos + cor por tecla, 3 perfis, remapeamento |
+| Redragon UCAL K673SP-RGB-PRO | `258A:010C` | ✅ validado | iluminação via cabo, 18 efeitos + cor por tecla (modelo verificado); sem remapeamento/perfis |
 <!-- devices:end -->
 
 **Seu aparelho não está aí?** O HIDra não é um projeto Redragon — ele começou
