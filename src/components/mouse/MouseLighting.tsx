@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n";
 import { useEffect, useState } from "react";
 import type { LedEffect, MouseState, Rgb } from "../../types";
 import { mouseSetLed } from "../../backend";
@@ -22,6 +23,7 @@ const EFFECT_OPTIONS: { value: LedEffect; label: string }[] = [
 ];
 
 export function MouseLighting({ state, applied, onApplied }: MouseLightingProps) {
+  const { t } = useTranslation();
   const run = useRun();
   const led = state?.led ?? null;
 
@@ -60,15 +62,14 @@ export function MouseLighting({ state, applied, onApplied }: MouseLightingProps)
   return (
     <div className="tabgrid">
       <Panel
-        title="Iluminação"
-        subtitle="Efeito do LED, cor e brilho do mouse"
+        title={t("Iluminação")}
+        subtitle={t("Efeito do LED, cor e brilho do mouse")}
         actions={
           <button type="button" className="btn btn--primary" onClick={apply}>
-            Aplicar
-          </button>
+            {t("Aplicar")}</button>
         }
       >
-        <Field label="Efeito">
+        <Field label={t("Efeito")}>
           <SegmentedControl<LedEffect>
             options={EFFECT_OPTIONS}
             value={effect}
@@ -77,7 +78,7 @@ export function MouseLighting({ state, applied, onApplied }: MouseLightingProps)
         </Field>
 
         <Field
-          label="Cor"
+          label={t("Cor")}
           hint={hasColor ? undefined : "Este efeito ignora a cor selecionada"}
         >
           <ColorPicker
@@ -87,7 +88,7 @@ export function MouseLighting({ state, applied, onApplied }: MouseLightingProps)
           />
         </Field>
 
-        <Field label="Brilho">
+        <Field label={t("Brilho")}>
           <Slider
             min={0}
             max={255}
@@ -99,7 +100,7 @@ export function MouseLighting({ state, applied, onApplied }: MouseLightingProps)
         </Field>
 
         {hasSpeed && (
-          <Field label="Velocidade" hint="Menor = mais rápido">
+          <Field label={t("Velocidade")} hint={t("Menor = mais rápido")}>
             <Slider
               min={0}
               max={255}
@@ -111,7 +112,7 @@ export function MouseLighting({ state, applied, onApplied }: MouseLightingProps)
         )}
       </Panel>
 
-      <Panel title="Pré-visualização" className="preview-panel">
+      <Panel title={t("Pré-visualização")} className="preview-panel">
         <div className="preview-stage">
           <MouseSilhouette
             color={color}

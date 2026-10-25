@@ -214,6 +214,11 @@ O protocolo do teclado foi obtido capturando o tráfego USB do programa oficial
 do Windows; cada byte está anotado em [`PROTOCOL.md`](PROTOCOL.md) para que
 ninguém precise refazer esse trabalho.
 
+A interface inicia em **inglês**. Selecione **English** ou **Português (Brasil)**
+em **Language / Idioma**, no rodapé da barra lateral. A preferência é salva
+localmente. A troca de idioma mantém as edições e não consulta nem grava no
+hardware. Para adicionar um idioma, veja [docs/TRANSLATING.md](docs/TRANSLATING.md).
+
 ## Contribuindo
 
 Relatos de bug, novos dispositivos, capturas de protocolo e melhorias de

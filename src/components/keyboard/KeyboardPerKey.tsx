@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n";
 import { useState } from "react";
 import type { CustomCell, Profile, Rgb } from "../../types";
 import { keyboardSetCustomColors } from "../../backend";
@@ -19,6 +20,7 @@ interface KeyboardPerKeyProps {
 const OFF: Rgb = [26, 28, 33];
 
 export function KeyboardPerKey({ profile, applied, layout, aspect, present }: KeyboardPerKeyProps) {
+  const { t } = useTranslation();
   const keys = layout ?? KEYBOARD_LAYOUT;
   const run = useRun();
   const [paint, setPaint] = useState<Rgb>([216, 31, 38]);
@@ -53,30 +55,25 @@ export function KeyboardPerKey({ profile, applied, layout, aspect, present }: Ke
   return (
     <div className="tabgrid tabgrid--single">
       <Panel
-        title="Cores por tecla"
-        subtitle="Pinte cada tecla individualmente (efeito Customizável)"
+        title={t("Cores por tecla")}
+        subtitle={t("Pinte cada tecla individualmente (efeito Customizável)")}
         actions={
           <div className="btnrow">
             <button type="button" className="btn" onClick={fillAll}>
-              Preencher tudo
-            </button>
+              {t("Preencher tudo")}</button>
             <button type="button" className="btn" onClick={clearAll}>
-              Limpar
-            </button>
+              {t("Limpar")}</button>
             <button type="button" className="btn btn--primary" onClick={apply} disabled={!present}>
-              Aplicar
-            </button>
+              {t("Aplicar")}</button>
           </div>
         }
       >
-        <Field label="Cor do pincel">
+        <Field label={t("Cor do pincel")}>
           <ColorPicker value={paint} onChange={setPaint} />
         </Field>
 
         <p className="note">
-          Clique numa tecla para pintá-la; clique com o botão direito para
-          apagá-la. Aplicar ativa o efeito <strong>Customizável</strong> e envia
-          o padrão para o teclado.
+          {t("Clique numa tecla para pintá-la; clique com o botão direito para apagá-la. Aplicar ativa o efeito Customizável e envia o padrão para o teclado.")}
         </p>
 
         <div
@@ -91,7 +88,7 @@ export function KeyboardPerKey({ profile, applied, layout, aspect, present }: Ke
                 type="button"
                 key={k.off}
                 className={`kbd-key${lit ? " kbd-key--lit" : ""}`}
-                title={k.label}
+                title={t(k.label)}
                 style={{
                   left: `${k.x}%`,
                   top: `${k.y}%`,
@@ -105,7 +102,7 @@ export function KeyboardPerKey({ profile, applied, layout, aspect, present }: Ke
                   setKey(k.off, null);
                 }}
               >
-                <span>{k.label}</span>
+                <span>{t(k.label)}</span>
               </button>
             );
           })}

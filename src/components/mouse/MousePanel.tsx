@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n";
 import type { MouseState } from "../../types";
 import { useLocalStorage } from "../../hooks";
 import { Tabs } from "../ui/Tabs";
@@ -26,15 +27,16 @@ interface MousePanelProps {
 }
 
 export function MousePanel({ state, name, present, applied, onApplied }: MousePanelProps) {
+  const { t } = useTranslation();
   const [tab, setTab] = useLocalStorage<MouseTab>("hidra.mouseTab", "led");
 
   return (
     <div className="workspace">
       <div className="workspace__top">
         <div className="workspace__heading">
-          <h1>{name}</h1>
+          <h1>{t(name)}</h1>
           <span className={`chip${present ? " chip--on" : " chip--off"}`}>
-            {present ? "Conectado" : "Desconectado"}
+            {present ? t("Conectado") : t("Desconectado")}
           </span>
         </div>
         <Tabs tabs={TABS} active={tab} onChange={setTab} />
@@ -42,9 +44,7 @@ export function MousePanel({ state, name, present, applied, onApplied }: MousePa
 
       {!present && (
         <p className="disconnected-note">
-          Mouse não detectado. Conecte o receptor 2.4G ou o cabo para aplicar
-          alterações — os controles abaixo continuam editáveis.
-        </p>
+          {t("Mouse não detectado. Conecte o receptor 2.4G ou o cabo para aplicar alterações — os controles abaixo continuam editáveis.")}</p>
       )}
 
       <div className="workspace__body">

@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n";
 import { useEffect, useState } from "react";
 import type {
   KeyboardCapabilities,
@@ -49,6 +50,7 @@ export function KeyboardLighting({
   applied,
   onApplied,
 }: KeyboardLightingProps) {
+  const { t } = useTranslation();
   const run = useRun();
 
   const [effect, setEffect] = useState<number>(6);
@@ -105,15 +107,14 @@ export function KeyboardLighting({
   return (
     <div className="tabgrid tabgrid--kbd">
       <Panel
-        title="Iluminação"
-        subtitle={capabilities?.profiles === 1 ? "USB keyboard lighting" : `Efeito de luz do Perfil ${profile}`}
+        title={t("Iluminação")}
+        subtitle={capabilities?.profiles === 1 ? t("USB keyboard lighting") : t("Efeito de luz do Perfil {profile}", { profile })}
         actions={
           <button type="button" className="btn btn--primary" onClick={apply} disabled={!present || !state?.present || !effects.some((e) => e.id === effect)}>
-            Aplicar
-          </button>
+            {t("Aplicar")}</button>
         }
       >
-        <Field label="Efeito">
+        <Field label={t("Efeito")}>
           <select
             className="input select"
             value={effect}
@@ -121,7 +122,7 @@ export function KeyboardLighting({
           >
             {effects.map((e) => (
               <option key={e.id} value={e.id}>
-                {e.name}
+                {t(e.name)}
               </option>
             ))}
           </select>
@@ -129,41 +130,40 @@ export function KeyboardLighting({
 
         {isCustom && (
           <p className="note">
-            Modo Customizável: pinte cada tecla na aba{" "}
-            <strong>Cores por tecla</strong>.
+            {t("Modo Customizável: pinte cada tecla na aba Cores por tecla.")}
           </p>
         )}
 
         {hasColor && (
-          <Field label="Multicolor (Full RGB)">
+          <Field label={t("Multicolor (Full RGB)")}>
             <Toggle
               checked={fullRgb}
               onChange={setFullRgb}
-              label={fullRgb ? "Ligado" : "Desligado"}
+              label={fullRgb ? t("Ligado") : t("Desligado")}
             />
           </Field>
         )}
 
         {hasColor && !fullRgb && (
-          <Field label="Cor">
+          <Field label={t("Cor")}>
             <ColorPicker value={color} onChange={setColor} />
           </Field>
         )}
 
         {hasDirection && (
-          <Field label="Direção">
+          <Field label={t("Direção")}>
             <SegmentedControl<number>
               value={direction}
               onChange={setDirection}
               options={[
-                { value: 0, label: "→ Direita" },
-                { value: 1, label: "← Esquerda" },
+                { value: 0, label: t("→ Direita") },
+                { value: 1, label: t("← Esquerda") },
               ]}
             />
           </Field>
         )}
 
-        <Field label="Brilho">
+        <Field label={t("Brilho")}>
           <Slider
             min={0}
             max={brightnessMax}
@@ -173,7 +173,7 @@ export function KeyboardLighting({
           />
         </Field>
 
-        <Field label="Velocidade" hint="Menor = mais rápido">
+        <Field label={t("Velocidade")} hint={t("Menor = mais rápido")}>
           <Slider
             min={speedMin}
             max={speedMax}
@@ -184,7 +184,7 @@ export function KeyboardLighting({
         </Field>
       </Panel>
 
-      <Panel title="Pré-visualização" className="preview-panel">
+      <Panel title={t("Pré-visualização")} className="preview-panel">
         <div className="preview-stage preview-stage--kbd">
           <KeyboardDiagram colorAt={colorAt} layout={capabilities?.layout ?? undefined} aspect={capabilities?.layout_aspect ?? undefined} />
         </div>

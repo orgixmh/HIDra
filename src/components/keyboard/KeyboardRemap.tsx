@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n";
 import { useEffect, useMemo, useState } from "react";
 import type { RemapKey, RemapKind } from "../../types";
 import { keyboardRemap, keyboardRemapKeys, keyboardRestoreKeymap } from "../../backend";
@@ -19,6 +20,7 @@ const FN_OPTIONS: { value: FnType; label: string }[] = [
 ];
 
 export function KeyboardRemap({ applied }: KeyboardRemapProps) {
+  const { t } = useTranslation();
   const run = useRun();
   const notify = useToast();
 
@@ -53,8 +55,8 @@ export function KeyboardRemap({ applied }: KeyboardRemapProps) {
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return q ? keys.filter((k) => k.label.toLowerCase().includes(q)) : keys;
-  }, [keys, search]);
+    return q ? keys.filter((k) => t(k.label).toLowerCase().includes(q)) : keys;
+  }, [keys, search, t]);
 
   const selectedKey = keys.find((k) => k.index === selected) ?? null;
 
@@ -89,13 +91,13 @@ export function KeyboardRemap({ applied }: KeyboardRemapProps) {
   return (
     <div className="tabgrid tabgrid--remap">
       <Panel
-        title="Tecla física"
-        subtitle="Escolha a tecla que deseja reprogramar"
+        title={t("Tecla física")}
+        subtitle={t("Escolha a tecla que deseja reprogramar")}
       >
         <input
           className="input"
           type="search"
-          placeholder="Buscar tecla…"
+          placeholder={t("Buscar tecla…")}
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
@@ -107,41 +109,39 @@ export function KeyboardRemap({ applied }: KeyboardRemapProps) {
                 className={`keylist__item${k.index === selected ? " is-active" : ""}`}
                 onClick={() => setSelected(k.index)}
               >
-                <span className="keylist__label">{k.label}</span>
+                <span className="keylist__label">{t(k.label)}</span>
                 <span className="keylist__idx">#{k.index}</span>
               </button>
             </li>
           ))}
           {filtered.length === 0 && (
-            <li className="keylist__empty">Nenhuma tecla encontrada</li>
+            <li className="keylist__empty">{t("Nenhuma tecla encontrada")}</li>
           )}
         </ul>
       </Panel>
 
       <Panel
-        title="Nova função"
+        title={t("Nova função")}
         subtitle={
           selectedKey
-            ? `Reprogramando “${selectedKey.label}” (#${selectedKey.index})`
-            : "Selecione uma tecla à esquerda"
+            ? t("Reprogramando “{label}” (#{index})", { label: t(selectedKey.label), index: selectedKey.index })
+            : t("Selecione uma tecla à esquerda")
         }
         actions={
           <div className="btnrow">
             <button type="button" className="btn" onClick={restore}>
-              Restaurar padrão
-            </button>
+              {t("Restaurar padrão")}</button>
             <button
               type="button"
               className="btn btn--primary"
               disabled={selected === null}
               onClick={apply}
             >
-              Aplicar
-            </button>
+              {t("Aplicar")}</button>
           </div>
         }
       >
-        <Field label="Tipo de função">
+        <Field label={t("Tipo de função")}>
           <select
             className="input select"
             value={fnType}
@@ -149,14 +149,14 @@ export function KeyboardRemap({ applied }: KeyboardRemapProps) {
           >
             {FN_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
-                {o.label}
+                {t(o.label)}
               </option>
             ))}
           </select>
         </Field>
 
         {fnType === "key" && (
-          <Field label="Tecla de destino">
+          <Field label={t("Tecla de destino")}>
             <select
               className="input select"
               value={keyCode}
@@ -164,7 +164,7 @@ export function KeyboardRemap({ applied }: KeyboardRemapProps) {
             >
               {KEY_USAGES.map((k) => (
                 <option key={k.code} value={k.code}>
-                  {k.label}
+                  {t(k.label)}
                 </option>
               ))}
             </select>
@@ -172,7 +172,7 @@ export function KeyboardRemap({ applied }: KeyboardRemapProps) {
         )}
 
         {fnType === "modifier" && (
-          <Field label="Modificador">
+          <Field label={t("Modificador")}>
             <select
               className="input select"
               value={modCode}
@@ -180,7 +180,7 @@ export function KeyboardRemap({ applied }: KeyboardRemapProps) {
             >
               {MODIFIERS.map((m) => (
                 <option key={m.code} value={m.code}>
-                  {m.label}
+                  {t(m.label)}
                 </option>
               ))}
             </select>
@@ -188,7 +188,7 @@ export function KeyboardRemap({ applied }: KeyboardRemapProps) {
         )}
 
         {fnType === "media" && (
-          <Field label="Tecla multimídia">
+          <Field label={t("Tecla multimídia")}>
             <select
               className="input select"
               value={mediaUsage}
@@ -196,7 +196,7 @@ export function KeyboardRemap({ applied }: KeyboardRemapProps) {
             >
               {MEDIA_USAGES.map((m) => (
                 <option key={m.usage} value={m.usage}>
-                  {m.label}
+                  {t(m.label)}
                 </option>
               ))}
             </select>
@@ -204,7 +204,7 @@ export function KeyboardRemap({ applied }: KeyboardRemapProps) {
         )}
 
         {fnType === "disable" && (
-          <p className="note">A tecla ficará sem função até ser reprogramada.</p>
+          <p className="note">{t("A tecla ficará sem função até ser reprogramada.")}</p>
         )}
       </Panel>
     </div>

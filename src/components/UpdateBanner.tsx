@@ -1,3 +1,4 @@
+import { useTranslation } from "../i18n";
 import type { UpdateState } from "../hooks";
 import type { AvailableUpdate, UpdateSupport } from "../updater";
 import { downloadUrl, releaseNotesUrl } from "../updater";
@@ -22,15 +23,15 @@ export function UpdateBanner({
   onInstall,
   onDismiss,
 }: UpdateBannerProps) {
+  const { t } = useTranslation();
   if (state.kind === "idle" || state.kind === "checking") return null;
 
   if (state.kind === "uptodate") {
     return (
       <div className="updatebar updatebar--quiet" role="status">
-        <span className="updatebar__text">Você está na versão mais recente.</span>
+        <span className="updatebar__text">{t("Você está na versão mais recente.")}</span>
         <button type="button" className="btn btn--sm" onClick={onDismiss}>
-          Fechar
-        </button>
+          {t("Fechar")}</button>
       </div>
     );
   }
@@ -39,7 +40,7 @@ export function UpdateBanner({
     return (
       <div className="updatebar updatebar--error" role="alert">
         <span className="updatebar__text">
-          Não foi possível atualizar: {state.message}
+          {t("Não foi possível atualizar: {message}", { message: t(state.message) })}
         </span>
         <a
           className="btn btn--sm"
@@ -47,11 +48,9 @@ export function UpdateBanner({
           target="_blank"
           rel="noreferrer"
         >
-          Baixar no site
-        </a>
+          {t("Baixar no site")}</a>
         <button type="button" className="btn btn--sm" onClick={onDismiss}>
-          Fechar
-        </button>
+          {t("Fechar")}</button>
       </div>
     );
   }
@@ -61,7 +60,7 @@ export function UpdateBanner({
     return (
       <div className="updatebar" role="status" aria-live="polite">
         <span className="updatebar__text">
-          {pct === null ? "Instalando atualização…" : `Baixando atualização… ${pct}%`}
+          {pct === null ? t("Instalando atualização…") : t("Baixando atualização… {percent}%", { percent: pct })}
         </span>
         <span className="updatebar__progress" aria-hidden="true">
           <span
@@ -78,7 +77,7 @@ export function UpdateBanner({
   return (
     <div className="updatebar" role="status">
       <span className="updatebar__text">
-        <strong>HIDra {update.version}</strong> disponível.
+        <strong>{t("HIDra {version} disponível.", { version: update.version })}</strong>
       </span>
       <a
         className="updatebar__link"
@@ -86,8 +85,7 @@ export function UpdateBanner({
         target="_blank"
         rel="noreferrer"
       >
-        Ver novidades
-      </a>
+        {t("Ver novidades")}</a>
       {canInstall ? (
         <button
           type="button"
@@ -95,12 +93,11 @@ export function UpdateBanner({
           onClick={() => onInstall(update)}
           title={
             support.bundle === "deb" || support.bundle === "rpm"
-              ? "Baixa o pacote assinado e instala pelo gerenciador do sistema"
-              : "Baixa a nova versão assinada e reinicia o app"
+              ? t("Baixa o pacote assinado e instala pelo gerenciador do sistema")
+              : t("Baixa a nova versão assinada e reinicia o app")
           }
         >
-          Atualizar agora
-        </button>
+          {t("Atualizar agora")}</button>
       ) : (
         <a
           className="btn btn--primary btn--sm"
@@ -108,12 +105,10 @@ export function UpdateBanner({
           target="_blank"
           rel="noreferrer"
         >
-          Baixar
-        </a>
+          {t("Baixar")}</a>
       )}
       <button type="button" className="btn btn--sm" onClick={onDismiss}>
-        Depois
-      </button>
+        {t("Depois")}</button>
     </div>
   );
 }

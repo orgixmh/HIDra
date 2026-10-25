@@ -1,3 +1,4 @@
+import { useTranslation } from "../i18n";
 import { createContext, useCallback, useContext, useRef, useState } from "react";
 import type { ReactNode } from "react";
 
@@ -52,6 +53,7 @@ function errorText(err: unknown): string {
 }
 
 export function ToastProvider({ children }: { children: ReactNode }) {
+  const { t } = useTranslation();
   const [toast, setToast] = useState<ToastMessage | null>(null);
   const counter = useRef(0);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -70,10 +72,10 @@ export function ToastProvider({ children }: { children: ReactNode }) {
         {toast ? (
           <span className={`toast toast--${toast.kind}`} key={toast.id}>
             <span className="toast__dot" />
-            {toast.text}
+            {t(toast.text)}
           </span>
         ) : (
-          <span className="toast toast--idle">Pronto</span>
+          <span className="toast toast--idle">{t("Pronto")}</span>
         )}
       </div>
     </ToastContext.Provider>

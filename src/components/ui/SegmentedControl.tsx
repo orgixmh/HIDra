@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n";
 export interface SegmentOption<T extends string | number> {
   value: T;
   label: string;
@@ -18,6 +19,7 @@ export function SegmentedControl<T extends string | number>({
   disabled,
   size = "md",
 }: SegmentedControlProps<T>) {
+  const { t } = useTranslation();
   return (
     <div
       className={`segmented segmented--${size}${disabled ? " segmented--disabled" : ""}`}
@@ -33,7 +35,7 @@ export function SegmentedControl<T extends string | number>({
           disabled={disabled}
           onClick={() => onChange(opt.value)}
         >
-          {opt.label}
+          {t(opt.label)}
         </button>
       ))}
     </div>

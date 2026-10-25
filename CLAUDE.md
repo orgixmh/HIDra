@@ -11,7 +11,7 @@ Read this before changing anything; it is short on purpose.
 ## Map
 
 ```
-src/                          React UI. User-facing strings are Portuguese (pt-BR).
+src/                          React UI. English default, English / Portuguese (pt-BR) catalogs.
   App.tsx                     Device selection, state loading, toasts
   backend.ts                  Tauri bridge + a mock backend so the UI runs in a browser
   components/{mouse,keyboard} One panel per device kind
@@ -90,7 +90,8 @@ a new module next to `mouse.rs`, a `Protocol` variant, an entry in `FEATURES` in
 
 - Comments explain **why**, not what. Match the density of the surrounding code.
 - Code, comments, docs, commit messages and issue templates: English. UI strings
-  and the pt-BR README: Portuguese. Both READMEs change together.
+  use `useTranslation()` and the catalogs under `src/locales/` (English default,
+  pt-BR also supported). Both READMEs change together. See `docs/TRANSLATING.md`.
 - Tauri commands are one-per-user-action and live in `lib.rs`; device I/O never
   happens in the UI layer.
 - A Tauri command whose JS caller passes a multi-word argument needs

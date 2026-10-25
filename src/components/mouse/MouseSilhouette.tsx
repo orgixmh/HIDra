@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n";
 import type { Rgb } from "../../types";
 import { rgbCss } from "../../hooks";
 
@@ -17,6 +18,7 @@ export function MouseSilhouette({
   brightness = 255,
   lit = true,
 }: MouseSilhouetteProps) {
+  const { t } = useTranslation();
   const glow = lit ? Math.max(0.15, brightness / 255) : 0;
   const stripColor = lit ? rgbCss(color) : "#1a1c22";
 
@@ -25,7 +27,7 @@ export function MouseSilhouette({
       className="mouse-svg"
       viewBox="0 0 200 300"
       role="img"
-      aria-label="Pré-visualização do mouse"
+      aria-label={t("Pré-visualização do mouse")}
     >
       <defs>
         <linearGradient id="mouseBody" x1="0" y1="0" x2="0" y2="1">

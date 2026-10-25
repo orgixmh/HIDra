@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n";
 export interface TabItem<T extends string> {
   id: T;
   label: string;
@@ -10,6 +11,7 @@ interface TabsProps<T extends string> {
 }
 
 export function Tabs<T extends string>({ tabs, active, onChange }: TabsProps<T>) {
+  const { t } = useTranslation();
   return (
     <nav className="tabs" role="tablist">
       {tabs.map((tab) => (
@@ -21,7 +23,7 @@ export function Tabs<T extends string>({ tabs, active, onChange }: TabsProps<T>)
           className={`tabs__item${tab.id === active ? " is-active" : ""}`}
           onClick={() => onChange(tab.id)}
         >
-          {tab.label}
+          {t(tab.label)}
         </button>
       ))}
     </nav>

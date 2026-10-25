@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n";
 import { useState } from "react";
 import type {
   ButtonAction,
@@ -50,6 +51,7 @@ const DPI_OP_OPTIONS: { value: DpiOp; label: string }[] = [
 ];
 
 export function MouseButtons({ state, applied }: MouseButtonsProps) {
+  const { t } = useTranslation();
   const run = useRun();
   const [uiIndex, setUiIndex] = useState(0);
 
@@ -101,7 +103,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
 
   return (
     <div className="tabgrid">
-      <Panel title="Botões" subtitle="Clique em um botão do diagrama para reprogramá-lo">
+      <Panel title={t("Botões")} subtitle={t("Clique em um botão do diagrama para reprogramá-lo")}>
         <div className="mouse-map">
           <MouseSilhouette color={[70, 74, 82]} lit={false} />
           {MOUSE_BUTTONS.map((b, i) => (
@@ -110,7 +112,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
               type="button"
               className={`mouse-hot${i === uiIndex ? " is-active" : ""}`}
               style={{ left: `${b.x}%`, top: `${b.y}%` }}
-              title={b.label}
+              title={t(b.label)}
               onClick={() => setUiIndex(i)}
             >
               {b.num}
@@ -126,7 +128,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
                 onClick={() => setUiIndex(i)}
               >
                 <span className="legend__num">{b.num}</span>
-                {b.label}
+                {t(b.label)}
               </button>
             </li>
           ))}
@@ -134,19 +136,18 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
       </Panel>
 
       <Panel
-        title={`Ação — Botão ${slot.num}`}
+        title={t("Ação — Botão {number}", { number: slot.num })}
         subtitle={
           raw
-            ? `Tabela #${slot.index} · atual [${raw.join(", ")}]`
-            : `Tabela #${slot.index}`
+            ? t("Tabela #{index} · atual [{value}]", { index: slot.index, value: raw.join(", ") })
+            : t("Tabela #{index}", { index: slot.index })
         }
         actions={
           <button type="button" className="btn btn--primary" onClick={apply}>
-            Aplicar
-          </button>
+            {t("Aplicar")}</button>
         }
       >
-        <Field label="Categoria">
+        <Field label={t("Categoria")}>
           <select
             className="input select"
             value={category}
@@ -154,14 +155,14 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
           >
             {CATEGORY_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
-                {o.label}
+                {t(o.label)}
               </option>
             ))}
           </select>
         </Field>
 
         {category === "mouse" && (
-          <Field label="Botão emulado">
+          <Field label={t("Botão emulado")}>
             <select
               className="input select"
               value={mouseBtn}
@@ -169,7 +170,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
             >
               {MOUSE_BUTTON_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.label}
+                  {t(o.label)}
                 </option>
               ))}
             </select>
@@ -177,7 +178,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
         )}
 
         {category === "dpi" && (
-          <Field label="Operação de DPI">
+          <Field label={t("Operação de DPI")}>
             <select
               className="input select"
               value={dpiOp}
@@ -185,7 +186,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
             >
               {DPI_OP_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>
-                  {o.label}
+                  {t(o.label)}
                 </option>
               ))}
             </select>
@@ -194,7 +195,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
 
         {category === "fire" && (
           <>
-            <Field label="Velocidade (ms entre cliques)">
+            <Field label={t("Velocidade (ms entre cliques)")}>
               <input
                 className="input"
                 type="number"
@@ -204,7 +205,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
                 onChange={(e) => setFireSpeed(Number(e.target.value))}
               />
             </Field>
-            <Field label="Nº de cliques">
+            <Field label={t("Nº de cliques")}>
               <input
                 className="input"
                 type="number"
@@ -218,7 +219,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
         )}
 
         {category === "media" && (
-          <Field label="Tecla multimídia">
+          <Field label={t("Tecla multimídia")}>
             <select
               className="input select"
               value={mediaUsage}
@@ -226,7 +227,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
             >
               {MEDIA_USAGES.map((m) => (
                 <option key={m.usage} value={m.usage}>
-                  {m.label}
+                  {t(m.label)}
                 </option>
               ))}
             </select>
@@ -234,7 +235,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
         )}
 
         {category === "key" && (
-          <Field label="Tecla">
+          <Field label={t("Tecla")}>
             <select
               className="input select"
               value={keyUsage}
@@ -242,7 +243,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
             >
               {KEY_USAGES.map((k) => (
                 <option key={k.code} value={k.code}>
-                  {k.label}
+                  {t(k.label)}
                 </option>
               ))}
             </select>
@@ -251,7 +252,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
 
         {category === "combo" && (
           <>
-            <Field label="Modificadores">
+            <Field label={t("Modificadores")}>
               <div className="checkrow">
                 {MODIFIERS.map((m) => (
                   <label key={m.code} className="checkchip">
@@ -260,12 +261,12 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
                       checked={(comboMods & m.code) !== 0}
                       onChange={() => toggleMod(m.code)}
                     />
-                    {m.label}
+                    {t(m.label)}
                   </label>
                 ))}
               </div>
             </Field>
-            <Field label="Tecla">
+            <Field label={t("Tecla")}>
               <select
                 className="input select"
                 value={comboUsage}
@@ -273,7 +274,7 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
               >
                 {KEY_USAGES.map((k) => (
                   <option key={k.code} value={k.code}>
-                    {k.label}
+                    {t(k.label)}
                   </option>
                 ))}
               </select>
@@ -286,10 +287,10 @@ export function MouseButtons({ state, applied }: MouseButtonsProps) {
           category === "polling_switch" ||
           category === "disabled") && (
           <p className="note">
-            {category === "three_click" && "Executa três cliques do botão esquerdo."}
-            {category === "rgb_toggle" && "Alterna a iluminação RGB do mouse."}
-            {category === "polling_switch" && "Alterna a taxa de polling atual."}
-            {category === "disabled" && "O botão fica sem função."}
+            {category === "three_click" && t("Executa três cliques do botão esquerdo.")}
+            {category === "rgb_toggle" && t("Alterna a iluminação RGB do mouse.")}
+            {category === "polling_switch" && t("Alterna a taxa de polling atual.")}
+            {category === "disabled" && t("O botão fica sem função.")}
           </p>
         )}
       </Panel>

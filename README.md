@@ -220,9 +220,10 @@ The keyboard protocol was reverse-engineered by capturing the official Windows
 tool's USB traffic; every byte of it is written down in
 [`PROTOCOL.md`](PROTOCOL.md) so nobody has to do that work twice.
 
-> The app's own interface is currently in Portuguese. Translating it is a
-> well-scoped first contribution — all user-facing strings live in the React
-> components under `src/`.
+The interface defaults to **English**. Choose **English** or **Português (Brasil)**
+from **Language** at the bottom of the sidebar; the choice is saved locally.
+Switching languages keeps your current edits and does not query or write to
+connected devices. See [docs/TRANSLATING.md](docs/TRANSLATING.md) to add a language.
 
 ## Contributing
 

@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n";
 import { useEffect, useState } from "react";
 import type { MouseState } from "../../types";
 import { mouseSetPolling } from "../../backend";
@@ -12,6 +13,7 @@ interface MousePollingProps {
 }
 
 export function MousePolling({ state, applied }: MousePollingProps) {
+  const { t } = useTranslation();
   const run = useRun();
   const [hz, setHz] = useState<number>(1000);
 
@@ -27,10 +29,10 @@ export function MousePolling({ state, applied }: MousePollingProps) {
   return (
     <div className="tabgrid tabgrid--single">
       <Panel
-        title="Taxa de polling"
-        subtitle="Frequência de reporte do mouse. Valores maiores reduzem a latência."
+        title={t("Taxa de polling")}
+        subtitle={t("Frequência de reporte do mouse. Valores maiores reduzem a latência.")}
       >
-        <Field label="Frequência">
+        <Field label={t("Frequência")}>
           <SegmentedControl<number>
             value={hz}
             onChange={change}
@@ -38,8 +40,7 @@ export function MousePolling({ state, applied }: MousePollingProps) {
           />
         </Field>
         <p className="note">
-          Selecionado: <strong>{hz} Hz</strong> · atualizações por segundo enviadas
-          ao computador.
+          {t("Selecionado: {hz} Hz · atualizações por segundo enviadas ao computador.", { hz })}
         </p>
       </Panel>
     </div>

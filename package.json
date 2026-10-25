@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "test:i18n": "node --experimental-strip-types --test --test-isolation=none scripts/tests/i18n.test.mjs"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.11.1",

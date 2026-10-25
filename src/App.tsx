@@ -1,3 +1,4 @@
+import { useTranslation } from "./i18n";
 import { useCallback, useEffect, useState } from "react";
 import "./App.css";
 import type {
@@ -36,6 +37,7 @@ const EMPTY_DEVICES: ListDevices = {
 };
 
 function AppShell() {
+  const { t } = useTranslation();
   const notify = useToast();
 
   const [devices, setDevices] = useState<ListDevices>(EMPTY_DEVICES);
@@ -140,30 +142,27 @@ function AppShell() {
             value={selected}
             onChange={setSelected}
             options={[
-              { value: "mouse", label: "Mouse" },
-              { value: "keyboard", label: "Teclado" },
+              { value: "mouse", label: t("Mouse") },
+              { value: "keyboard", label: t("Teclado") },
             ]}
           />
           <button
             type="button"
             className="btn"
             onClick={refreshDevices}
-            title="Procurar dispositivos após conectar ou desconectar o cabo/dongle"
+            title={t("Procurar dispositivos após conectar ou desconectar o cabo/dongle")}
           >
-            Atualizar dispositivos
-          </button>
+            {t("Atualizar dispositivos")}</button>
           <div className="topbar__status">
             <span className={`led${devices.mouse ? " led--on" : ""}`} />
-            Mouse
-            <span className={`led${devices.keyboard ? " led--on" : ""}`} />
-            Teclado
-          </div>
+            {t("Mouse")}<span className={`led${devices.keyboard ? " led--on" : ""}`} />
+            {t("Teclado")}</div>
         </header>
 
         {selected === "mouse" ? (
           <MousePanel
             state={mouseState}
-            name={devices.mouse_model ?? "Mouse"}
+            name={devices.mouse_model ?? t("Mouse")}
             present={devices.mouse}
             applied={mouseApplied}
             onApplied={loadMouse}
@@ -173,7 +172,7 @@ function AppShell() {
             key={devices.keyboard_model ?? "none"}
             state={keyboardState}
             capabilities={caps}
-            name={devices.keyboard_model ?? "Teclado"}
+            name={devices.keyboard_model ?? t("Teclado")}
             effects={effects}
             present={devices.keyboard}
             profile={keyboardProfile}

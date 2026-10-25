@@ -1,3 +1,4 @@
+import { useTranslation } from "../../i18n";
 import { useEffect, useState } from "react";
 import type { DpiStage, MouseState, Rgb } from "../../types";
 import {
@@ -38,6 +39,7 @@ function clampDpi(v: number): number {
 }
 
 export function MouseDpi({ state, applied, onApplied }: MouseDpiProps) {
+  const { t } = useTranslation();
   const run = useRun();
   const [stages, setStages] = useState<DpiStage[]>(DEFAULT_STAGES);
   const [editColor, setEditColor] = useState<number | null>(null);
@@ -84,27 +86,26 @@ export function MouseDpi({ state, applied, onApplied }: MouseDpiProps) {
     <div className="tabgrid tabgrid--single">
       <Panel
         title="DPI"
-        subtitle="Até 5 estágios. Passo de gravação ≈ 83 DPI, então o valor aplicado pode diferir do digitado."
+        subtitle={t("Até 5 estágios. Passo de gravação ≈ 83 DPI, então o valor aplicado pode diferir do digitado.")}
         actions={
           <button type="button" className="btn" onClick={applyAll}>
-            Aplicar todos
-          </button>
+            {t("Aplicar todos")}</button>
         }
       >
         <div className="dpi-effect-row">
           <Toggle
             checked={dpiEffect}
             onChange={applyDpiEffect}
-            label="DPI Effect — LED indica o estágio ativo"
+            label={t("DPI Effect — LED indica o estágio ativo")}
           />
         </div>
 
         <div className="dpi-table">
           <div className="dpi-head">
-            <span>Estágio</span>
+            <span>{t("Estágio")}</span>
             <span>DPI (100–16000)</span>
-            <span>Cor</span>
-            <span>Ativo</span>
+            <span>{t("Cor")}</span>
+            <span>{t("Ativo")}</span>
             <span />
           </div>
 
@@ -137,7 +138,7 @@ export function MouseDpi({ state, applied, onApplied }: MouseDpiProps) {
                   type="button"
                   className="swatch swatch--lg"
                   style={{ background: rgbToHex(s.color) }}
-                  title="Editar cor do estágio"
+                  title={t("Editar cor do estágio")}
                   onClick={() => setEditColor(editColor === i ? null : i)}
                 />
                 {editColor === i && (
@@ -160,8 +161,7 @@ export function MouseDpi({ state, applied, onApplied }: MouseDpiProps) {
                 className="btn btn--sm btn--primary"
                 onClick={() => applyStage(i)}
               >
-                Aplicar
-              </button>
+                {t("Aplicar")}</button>
             </div>
           ))}
         </div>
