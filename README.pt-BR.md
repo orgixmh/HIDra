@@ -99,6 +99,19 @@ a remoção. Apenas notificações recebidas enquanto o modo está ativo são ac
 o histórico anterior não é importado. Regras antigas com duração em segundos
 migram para a nova opção padrão de dispensa.
 
+Scripts personalizados são outra **Origem da notificação**. Informe o caminho
+absoluto de um script executável (com shebang) e um intervalo de 5–86400 segundos.
+Com o modo ativo, o script executa imediatamente e aguarda o intervalo após cada
+execução. Código de saída **1** ativa as teclas; **0** limpa o alerta desse script.
+A duração padrão é **Até o script retornar 0**. Outros códigos, erros e o limite
+de 10 segundos mostram o erro e preservam o último estado. Execuções da mesma
+regra não se sobrepõem, não abrem terminal e descartam stdout/stderr. Desativar,
+alterar regras ou fechar o HIDra interrompe os scripts. Configure argumentos e
+ambiente no próprio script. **Testar regra** apenas demonstra a iluminação.
+
+A paleta interna **Cor personalizada** oferece seleção de saturação/brilho,
+controles de matiz, saturação e brilho, canais RGB e entrada HEX.
+
 O monitor usa o D-Bus da sessão, sem root nem substituir o serviço de notificações.
 Se a sessão bloquear o monitoramento, o painel apresenta um erro. Quadros RGB
 temporários usam uma conexão HID aberta; o quadro de fundo ocioso exige atualização

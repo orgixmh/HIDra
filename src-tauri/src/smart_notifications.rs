@@ -2,6 +2,7 @@
 //! Event-driven notification rules and exclusive lighting ownership.
 use crate::desktop_notifications::{self, Listener};
 use crate::notification_lighting::{self, Lighting, Snapshot};
+use crate::script_notifications::{self, Runner};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -55,6 +56,25 @@ fn deserialize_duration<'de, D: serde::Deserializer<'de>>(d: D) -> Result<u16, D
 pub enum NotificationId {
     Freedesktop(u32),
     Gtk(String, String),
+    Script(String),
+}
+
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Source {
+    #[default]
+    Notification,
+    Script,
+}
+fn default_interval() -> u32 {
+    30
+}
+#[derive(Clone, Debug, Serialize)]
+pub struct ScriptStatus {
+    pub id: String,
+    pub running: bool,
+    pub last_exit: Option<i32>,
+    pub error: Option<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -72,6 +92,12 @@ pub struct Rule {
     pub duration_seconds: u16,
     #[serde(default)]
     pub blinking: bool,
+    #[serde(default)]
+    pub source: Source,
+    #[serde(default)]
+    pub script_path: String,
+    #[serde(default = "default_interval")]
+    pub interval_seconds: u32,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -96,6 +122,7 @@ pub struct View {
     pub error: Option<String>,
     pub recent: Vec<RecentNotification>,
     pub lit_keys: Vec<u16>,
+    pub scripts: Vec<ScriptStatus>,
 }
 
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
@@ -106,6 +133,13 @@ pub(crate) enum Command {
     Clear(SyncSender<Result<View, String>>),
     Test(String, SyncSender<Result<View, String>>),
     ListenerFailed(String),
+    ScriptUpdate {
+        generation: u64,
+        id: String,
+        running: bool,
+        exit: Option<i32>,
+        error: Option<String>,
+    },
     Resume,
     Shutdown(SyncSender<()>),
 }
@@ -143,6 +177,7 @@ impl SmartNotifications {
             error,
             recent: Vec::new(),
             lit_keys: Vec::new(),
+            scripts: Vec::new(),
         }));
         let (sender, receiver) = mpsc::sync_channel(128);
         let worker = Worker {
@@ -156,6 +191,8 @@ impl SmartNotifications {
             listener: None,
             alerts: Vec::new(),
             last_frame: Instant::now(),
+            scripts: None,
+            generation: 0,
         };
         thread::spawn(move || worker.run(receiver));
         let smart = Self { sender, view };
@@ -218,6 +255,8 @@ struct Worker {
     listener: Option<Listener>,
     alerts: Vec<Alert>,
     last_frame: Instant,
+    scripts: Option<Runner>,
+    generation: u64,
 }
 
 impl Worker {
@@ -274,6 +313,9 @@ impl Worker {
         Ok(())
     }
     fn restore(&mut self) -> Result<(), String> {
+        self.scripts.take();
+        self.generation = self.generation.wrapping_add(1);
+        self.view.lock().scripts.clear();
         self.listener.take();
         self.alerts.clear();
         if let Some(lighting) = &self.lighting {
@@ -307,9 +349,81 @@ impl Worker {
         .into();
         view.error = None;
         drop(view);
+        self.start_scripts();
         self.light()?;
         self.publish();
         Ok(self.view.lock().clone())
+    }
+    fn start_scripts(&mut self) {
+        self.scripts.take();
+        self.generation = self.generation.wrapping_add(1);
+        let mut view = self.view.lock();
+        let rules: Vec<_> = view
+            .settings
+            .rules
+            .iter()
+            .filter(|rule| view.settings.enabled && rule.enabled && rule.source == Source::Script)
+            .cloned()
+            .collect();
+        view.scripts = rules
+            .iter()
+            .map(|rule| ScriptStatus {
+                id: rule.id.clone(),
+                running: false,
+                last_exit: None,
+                error: None,
+            })
+            .collect();
+        drop(view);
+        if !rules.is_empty() {
+            self.scripts = Some(script_notifications::start(
+                rules,
+                self.generation,
+                self.sender.clone(),
+            ));
+        }
+    }
+    fn script_update(
+        &mut self,
+        id: String,
+        running: bool,
+        exit: Option<i32>,
+        error: Option<String>,
+    ) -> Result<(), String> {
+        let rule = {
+            let mut view = self.view.lock();
+            if let Some(status) = view.scripts.iter_mut().find(|status| status.id == id) {
+                status.running = running;
+                if !running {
+                    status.last_exit = exit;
+                    status.error = error.clone();
+                }
+            }
+            view.settings
+                .rules
+                .iter()
+                .find(|rule| rule.id == id && rule.enabled && rule.source == Source::Script)
+                .cloned()
+        };
+        if !running && error.is_none() {
+            if let Some(rule) = rule {
+                let key = NotificationId::Script(id);
+                if exit == Some(0) {
+                    self.alerts
+                        .retain(|alert| alert.notification.as_ref() != Some(&key));
+                } else if exit == Some(1)
+                    && !self
+                        .alerts
+                        .iter()
+                        .any(|alert| alert.notification.as_ref() == Some(&key))
+                {
+                    self.alert(rule, Some(key));
+                }
+                self.light()?;
+            }
+        }
+        self.publish();
+        Ok(())
     }
     fn light(&mut self) -> Result<(), String> {
         if let Some(lighting) = &self.lighting {
@@ -412,6 +526,8 @@ impl Worker {
                     });
                     if let Err(error) = result {
                         self.fail(error);
+                    } else {
+                        self.start_scripts();
                     }
                     self.publish();
                 }
@@ -475,6 +591,20 @@ impl Worker {
                     }
                     self.publish();
                     let _ = reply.send(result.map(|_| self.view.lock().clone()));
+                }
+                Ok(Command::ScriptUpdate {
+                    generation,
+                    id,
+                    running,
+                    exit,
+                    error,
+                }) => {
+                    if generation == self.generation && self.listener.is_some() {
+                        if let Err(error) = self.script_update(id, running, exit, error) {
+                            self.fail(error);
+                            self.publish();
+                        }
+                    }
                 }
                 Ok(Command::ListenerFailed(error)) => {
                     self.fail(error);
@@ -545,7 +675,8 @@ fn compose_cells(background: [u8; 3], alerts: &[Alert], now: Instant) -> Vec<(u1
 
 impl Rule {
     fn matches(&self, notification: &DesktopNotification) -> bool {
-        self.enabled
+        self.source == Source::Notification
+            && self.enabled
             && !self.keys.is_empty()
             && (self.app.trim().is_empty()
                 || notification
@@ -575,7 +706,21 @@ fn validate(settings: &Settings) -> Result<(), String> {
         {
             return Err("Enter a rule name and shorter notification filters".into());
         }
-        if rule.app.trim().is_empty() && rule.text.trim().is_empty() {
+        if rule.source == Source::Script {
+            if rule.script_path.len() > 4096
+                || !Path::new(&rule.script_path).is_absolute()
+                || rule.script_path.contains('\0')
+            {
+                return Err("Choose an absolute path to an executable script".into());
+            }
+            if !(5..=86400).contains(&rule.interval_seconds) {
+                return Err("Script interval must be between 5 and 86400 seconds".into());
+            }
+        }
+        if rule.source == Source::Notification
+            && rule.app.trim().is_empty()
+            && rule.text.trim().is_empty()
+        {
             return Err("Choose an application or title/description filter".into());
         }
         if ![0, 60, 300, 600].contains(&rule.duration_seconds) {
@@ -653,6 +798,9 @@ mod tests {
             color: [100, 30, 255],
             duration_seconds: 0,
             blinking: false,
+            source: Source::Notification,
+            script_path: String::new(),
+            interval_seconds: default_interval(),
         }
     }
     #[test]

@@ -38,10 +38,10 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
   const keys = layout ?? KEYBOARD_LAYOUT;
   const draft = rules.find((rule) => rule.id === selected);
   const enabled = view?.settings.enabled ?? false;
-  const source = draft?.app.trim() === "" && draft?.text.trim().toLowerCase() === "mail.google.com" ? "gmail" : "custom";
+  const source = draft?.source === "script" ? "script" : draft?.app.trim() === "" && draft?.text.trim().toLowerCase() === "mail.google.com" ? "gmail" : "custom";
   const dirty = JSON.stringify(rules) !== saved || JSON.stringify(background) !== savedBackground;
   const valid = rules.length <= 64 && rules.every((rule) => rule.name.trim() &&
-    (rule.app.trim() || rule.text.trim()) && rule.keys.length > 0 && [0, 60, 300, 600].includes(rule.duration_seconds));
+    (rule.source === "script" ? rule.script_path.startsWith("/") && rule.interval_seconds >= 5 && rule.interval_seconds <= 86400 : (rule.app.trim() || rule.text.trim())) && rule.keys.length > 0 && [0, 60, 300, 600].includes(rule.duration_seconds));
   const available = !isTauri() || (supported && present);
   const apps = [...new Set(["Viber", "Telegram", "Discord", "Slack", ...(view?.recent.map((event) => event.app) ?? [])])];
   const update = (change: Partial<NotificationRule>) => {
@@ -56,7 +56,7 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
   const add = () => {
     const id = crypto.randomUUID();
     setRules((previous) => [...previous, { id, name: t("Rule {number}", { number: previous.length + 1 }),
-      enabled: true, app: "", text: "", keys: [], color: [140, 80, 255], duration_seconds: 0, blinking: false }]);
+      enabled: true, app: "", text: "", keys: [], color: [140, 80, 255], duration_seconds: 0, blinking: false, source: "notification", script_path: "", interval_seconds: 30 }]);
     setSelected(id);
   };
   const remove = () => {
@@ -101,7 +101,7 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
             {rules.map((rule) => <button type="button" key={rule.id} className={`smart-rule${rule.id === selected ? " is-active" : ""}`}
               onClick={() => setSelected(rule.id)}>
               <span className="smart-colour" style={{ background: rgbCss(rule.color) }} />
-              <span><strong>{rule.name}</strong><small>{rule.app.trim() === "" && rule.text.trim().toLowerCase() === "mail.google.com" ? t("Gmail (Browser)") : rule.app || rule.text || t("Configure a filter")}</small></span>
+              <span><strong>{rule.name}</strong><small>{rule.source === "script" ? t("Custom script") : rule.app.trim() === "" && rule.text.trim().toLowerCase() === "mail.google.com" ? t("Gmail (Browser)") : rule.app || rule.text || t("Configure a filter")}</small></span>
               <span className="chip chip--muted">{t("{count} keys", { count: rule.keys.length })}</span>
             </button>)}
             {!rules.length && <p className="note">{t("Add your first rule to assign notifications to keys.")}</p>}
@@ -111,12 +111,29 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
             <Toggle checked={draft.enabled} onChange={(on) => update({ enabled: on })} label={t("Rule enabled")} />
             <Field label={t("Notification source")}>
               <select className="input" value={source} onChange={(event) => update(event.target.value === "gmail"
-                ? { app: "", text: "mail.google.com" } : { app: "", text: "" })}>
+                ? { source: "notification", app: "", text: "mail.google.com" } : event.target.value === "script"
+                ? { source: "script", app: "", text: "", duration_seconds: 0 } : { source: "notification", app: "", text: "" })}>
                 <option value="custom">{t("Custom application or website")}</option>
                 <option value="gmail">{t("Gmail (Browser)")}</option>
+                <option value="script">{t("Custom script")}</option>
               </select>
             </Field>
-            {source === "gmail" ? <p className="note">{t("Matches mail.google.com in the notification title or description, from any browser. No manual filter is needed.")}</p> : <>
+            {source === "script" ? <>
+              <Field label={t("Script path")} hint={t("Enter the absolute path to an executable script with a shebang. No terminal is opened.")}>
+                <input className="input" value={draft.script_path} placeholder="/home/user/scripts/check-vpn.sh" maxLength={4096}
+                  onChange={(event) => update({ script_path: event.target.value })} />
+              </Field>
+              <Field label={t("Check interval (seconds)")} hint={t("Runs immediately, then waits this interval after each run. Maximum run time: 10 seconds.")}>
+                <input className="input" type="number" min={5} max={86400} step={1} value={draft.interval_seconds}
+                  onChange={(event) => update({ interval_seconds: Number(event.target.value) })} />
+              </Field>
+              <p className="note">{t("Exit code 1 triggers the alert. Exit code 0 clears it. Other exit codes or timeouts show an error and keep the last alert state.")}</p>
+              <div className="smart-status" role="status">{(() => {
+                const status = view?.scripts?.find((entry) => entry.id === draft.id);
+                return status?.running ? t("Running script…") : status?.error ? <span className="smart-error">{t(status.error)}</span>
+                  : status?.last_exit != null ? t("Last exit code: {code}", { code: status.last_exit }) : t("Script has not run yet");
+              })()}</div>
+            </> : source === "gmail" ? <p className="note">{t("Matches mail.google.com in the notification title or description, from any browser. No manual filter is needed.")}</p> : <>
             <Field label={t("Application contains")} hint={t("Leave empty to match any application or browser.")}>
               <input className="input" list="smart-apps" maxLength={200} value={draft.app} placeholder={t("Example: Viber or Telegram")}
                 onChange={(event) => update({ app: event.target.value })} />
@@ -129,9 +146,9 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
             <p className="note">{t("Matching ignores letter case. If both filters are filled in, both must match.")}</p>
             </>}
             <Field label={t("Alert colour")}><ColorPicker value={draft.color} onChange={(color) => update({ color })} /></Field>
-            <Field label={t("Keep alert active")} hint={t("Dismissed means removed from desktop notifications, not read inside the app. Some apps do not report dismissals; use Clear alerts if needed.")}>
+            <Field label={t("Keep alert active")} hint={t(source === "script" ? "The default keeps the key active until the script returns 0." : "Dismissed means removed from desktop notifications, not read inside the app. Some apps do not report dismissals; use Clear alerts if needed.")}>
               <select className="input" value={draft.duration_seconds} onChange={(event) => update({ duration_seconds: Number(event.target.value) })}>
-                <option value={0}>{t("Until notification is dismissed")}</option>
+                <option value={0}>{t(source === "script" ? "Until script returns 0" : "Until notification is dismissed")}</option>
                 <option value={60}>{t("1 minute")}</option>
                 <option value={300}>{t("5 minutes")}</option>
                 <option value={600}>{t("10 minutes")}</option>
@@ -148,7 +165,7 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
           <div className="smart-save">
             <button className="btn btn--primary" type="button" disabled={busy || !view || !valid || !dirty}
               onClick={() => void action(() => save({ enabled, rules, background }), "Notification rules saved")}>{t("Save rules")}</button>
-            {!valid && <p className="note">{t("Each rule needs a name, a filter, at least one key and a valid alert duration.")}</p>}
+            {!valid && <p className="note">{t("Each rule needs a name, a notification filter or script path, at least one key and a valid duration / interval.")}</p>}
           </div>
         </Panel>
 
@@ -178,9 +195,9 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
             <div><strong>{event.app || t("Unknown application")}</strong><span>{event.title}</span><p>{event.body}</p></div>
             <div className="smart-recent-actions">
               <span className={`chip${event.matched ? " chip--on" : " chip--muted"}`}>{t(event.matched ? "Matched" : "No matching rule")}</span>
-              <button className="btn btn--sm" type="button" disabled={!draft || busy} onClick={() => update({ app: event.app, text: source === "gmail" ? "" : draft?.text ?? "" })}>{t("Use application")}</button>
-              <button className="btn btn--sm" type="button" disabled={!draft || busy} onClick={() => update({ text: event.title })}>{t("Use title")}</button>
-              <button className="btn btn--sm" type="button" disabled={!draft || busy || !event.body} onClick={() => update({ text: event.body.slice(0, 300) })}>{t("Use description")}</button>
+              <button className="btn btn--sm" type="button" disabled={!draft || busy} onClick={() => update({ source: "notification", app: event.app, text: source === "gmail" || source === "script" ? "" : draft?.text ?? "" })}>{t("Use application")}</button>
+              <button className="btn btn--sm" type="button" disabled={!draft || busy} onClick={() => update({ source: "notification", text: event.title })}>{t("Use title")}</button>
+              <button className="btn btn--sm" type="button" disabled={!draft || busy || !event.body} onClick={() => update({ source: "notification", text: event.body.slice(0, 300) })}>{t("Use description")}</button>
             </div>
           </div>)}
         </div>

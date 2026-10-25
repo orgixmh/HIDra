@@ -105,6 +105,20 @@ a fixed duration. Only notifications arriving while Smart mode is listening are
 tracked; existing notification history is not imported on startup. Existing rules
 with second-based durations migrate to the new dismissal default.
 
+Custom scripts are another **Notification source**. Enter the absolute path to
+an executable script (with a shebang) and an interval of 5–86400 seconds. While
+Smart mode is on, the script runs immediately and again after the selected delay
+following completion. Exit code **1** triggers the assigned keys; **0** clears
+that script's alert. The default duration is **Until script returns 0**. Other
+exit codes, launch errors and the 10-second timeout show a status error and
+preserve the last alert state. Runs never overlap for the same rule, use no
+terminal and discard stdout/stderr. Off, rule changes and app exit stop running
+scripts. Use the script file for arguments or environment setup. **Test rule**
+previews lighting only; it does not execute the script.
+
+The in-app **Custom colour** palette offers a saturation/brightness plane, hue,
+saturation and brightness sliders, RGB channels and direct HEX entry.
+
 The listener uses the session D-Bus notification service without root or replacing
 your notification daemon. If the session disallows monitoring, the panel displays
 an error. Smart mode uses temporary RGB frames and keeps one HID handle open;

@@ -124,12 +124,12 @@ function log(cmd: string, args?: Record<string, unknown>): void {
 
 
 const mockSmart: SmartView = { settings: { enabled: false, rules: [], background: [24, 24, 32] }, active: false,
-  status: "off", error: null, recent: [], lit_keys: [] };
+  status: "off", error: null, recent: [], lit_keys: [], scripts: [] };
 try {
   const saved = JSON.parse(localStorage.getItem("hidra.smartNotifications.preview") ?? "null") as SmartSettings | null;
   if (saved && typeof saved.enabled === "boolean" && Array.isArray(saved.rules)) {
     mockSmart.settings = { ...saved, background: saved.background ?? [24, 24, 32],
-      rules: saved.rules.map((rule) => ({ ...rule, blinking: rule.blinking ?? false,
+      rules: saved.rules.map((rule) => ({ ...rule, blinking: rule.blinking ?? false, source: rule.source ?? "notification", script_path: rule.script_path ?? "", interval_seconds: rule.interval_seconds ?? 30,
         duration_seconds: [0, 60, 300, 600].includes(rule.duration_seconds) ? rule.duration_seconds : 0 })) };
     mockSmart.active = saved.enabled;
     mockSmart.status = saved.enabled ? "listening" : "off";

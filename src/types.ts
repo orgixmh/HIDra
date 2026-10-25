@@ -130,6 +130,9 @@ export interface NotificationRule {
   color: Rgb;
   duration_seconds: number;
   blinking: boolean;
+  source: "notification" | "script";
+  script_path: string;
+  interval_seconds: number;
 }
 export interface SmartSettings { enabled: boolean; rules: NotificationRule[]; background: Rgb }
 export interface SmartView {
@@ -139,4 +142,5 @@ export interface SmartView {
   error: string | null;
   recent: { app: string; title: string; body: string; matched: boolean }[];
   lit_keys: number[];
+  scripts: { id: string; running: boolean; last_exit: number | null; error: string | null }[];
 }

@@ -10,6 +10,7 @@ mod keyboard;
 mod keyboard_driver;
 mod mouse;
 mod notification_lighting;
+mod script_notifications;
 mod sinowealth;
 mod smart_notifications;
 mod update;
