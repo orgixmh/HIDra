@@ -3,22 +3,26 @@ import type { KeyboardCapabilities, KeyboardEffect, KeyboardState, Profile } fro
 import { useLocalStorage } from "../../hooks";
 import { Tabs } from "../ui/Tabs";
 import type { TabItem } from "../ui/Tabs";
+import { SmartNotifications } from "./SmartNotifications";
+import type { SmartController } from "../../useSmartNotifications";
 import { KeyboardLighting } from "./KeyboardLighting";
 import { KeyboardPerKey } from "./KeyboardPerKey";
 import { KeyboardRemap } from "./KeyboardRemap";
 import { KeyboardProfiles } from "./KeyboardProfiles";
 
-type KeyboardTab = "led" | "perkey" | "remap" | "profiles";
+type KeyboardTab = "led" | "perkey" | "smart" | "remap" | "profiles";
 
 const TABS: TabItem<KeyboardTab>[] = [
   { id: "led", label: "Iluminação" },
   { id: "perkey", label: "Cores por tecla" },
+  { id: "smart", label: "Smart Notifications" },
   { id: "remap", label: "Remapear teclas" },
   { id: "profiles", label: "Perfis" },
 ];
 
 interface KeyboardPanelProps {
   state: KeyboardState | null;
+  smart: SmartController;
   capabilities?: KeyboardCapabilities | null;
   effects: KeyboardEffect[];
   /** Model of the keyboard that was found, or a generic label when none is. */
@@ -32,6 +36,7 @@ interface KeyboardPanelProps {
 
 export function KeyboardPanel({
   state,
+  smart,
   capabilities,
   effects,
   name,
@@ -45,7 +50,7 @@ export function KeyboardPanel({
   const [tab, setTab] = useLocalStorage<KeyboardTab>("hidra.keyboardTab", "led");
 
   const tabs = TABS.filter((t) =>
-    t.id === "led" ||
+    t.id === "led" || t.id === "smart" ||
     (t.id === "perkey" && (capabilities?.per_key ?? true)) ||
     (t.id === "remap" && (capabilities?.remap ?? true)) ||
     (t.id === "profiles" && (capabilities?.profiles ?? 3) > 1));
@@ -71,6 +76,11 @@ export function KeyboardPanel({
 
       {capabilities?.remap === false && <p className="note">{t("Lighting and per-key colours are available over USB. Key remapping and profile switching are not supported yet.")}</p>}
       <div className="workspace__body">
+        {active === "smart" ? <SmartNotifications controller={smart}
+          layout={capabilities?.layout ?? undefined} aspect={capabilities?.layout_aspect ?? undefined}
+          supported={capabilities?.smart_notifications ?? false} present={present} /> : <>
+        {smart.view?.active && <p className="note">{t("Smart Notifications controls the lighting. Turn it off to use manual controls.")}</p>}
+        <fieldset className="smart-manual-controls" disabled={smart.view?.active ?? false}>
         {active === "led" && (
           <KeyboardLighting
             state={state}
@@ -91,6 +101,7 @@ export function KeyboardPanel({
             applied={applied}
           />
         )}
+        </fieldset></>}
       </div>
     </div>
   );

@@ -2,31 +2,69 @@
 // Copyright (C) 2026 HIDra contributors.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+mod desktop_notifications;
 mod devices;
 mod error;
 mod hid;
 mod keyboard;
 mod keyboard_driver;
 mod mouse;
+mod notification_lighting;
 mod sinowealth;
+mod smart_notifications;
 mod update;
 
 use error::Result;
 use hidapi::HidApi;
 use parking_lot::Mutex;
 use serde::Serialize;
-use tauri::State;
+use std::sync::Arc;
+use tauri::{Manager, State};
 
 /// Shared HID context. Re-enumerated before every operation so hot-plug and the
 /// wireless mouse waking up are picked up without restarting the app.
 pub struct App {
     api: Mutex<HidApi>,
+    keyboard_gate: Arc<Mutex<bool>>,
 }
 
 fn with_api<T>(app: &App, f: impl FnOnce(&HidApi) -> T) -> T {
     let mut guard = app.api.lock();
     let _ = guard.refresh_devices();
     f(&guard)
+}
+
+fn with_keyboard_api<T>(app: &App, f: impl FnOnce(&HidApi) -> Result<T>) -> Result<T> {
+    let owned = app.keyboard_gate.lock();
+    if *owned {
+        return Err(error::DevError::Invalid(
+            "Smart Notifications controls the lighting. Turn it off to use manual controls.".into(),
+        ));
+    }
+    with_api(app, f)
+}
+
+#[tauri::command]
+fn smart_notifications_get(
+    smart: State<smart_notifications::SmartNotifications>,
+) -> smart_notifications::View {
+    smart.get()
+}
+
+#[tauri::command]
+fn smart_notifications_save(
+    smart: State<smart_notifications::SmartNotifications>,
+    settings: smart_notifications::Settings,
+) -> std::result::Result<smart_notifications::View, String> {
+    smart.save(settings)
+}
+
+#[tauri::command]
+fn smart_notifications_test(
+    smart: State<smart_notifications::SmartNotifications>,
+    id: String,
+) -> std::result::Result<smart_notifications::View, String> {
+    smart.test(id)
 }
 
 #[derive(Serialize)]
@@ -49,8 +87,13 @@ struct Presence {
 
 #[tauri::command]
 fn list_devices(app: State<App>) -> Presence {
+    let owned = app.keyboard_gate.lock();
     with_api(&app, |api| {
-        let kb = keyboard_driver::find(api);
+        let kb = if *owned {
+            hid::find(api, hid::Kind::Keyboard)
+        } else {
+            keyboard_driver::find(api)
+        };
         let m = hid::find(api, hid::Kind::Mouse);
         Presence {
             keyboard: kb.is_some(),
@@ -123,7 +166,7 @@ fn mouse_set_button(app: State<App>, index: usize, action: mouse::Action) -> Res
 
 #[tauri::command]
 fn keyboard_read_state(app: State<App>, profile: u8) -> Result<keyboard::KbState> {
-    with_api(&app, |api| keyboard_driver::read_state(api, profile))
+    with_keyboard_api(&app, |api| keyboard_driver::read_state(api, profile))
 }
 
 #[tauri::command]
@@ -147,7 +190,7 @@ fn keyboard_set_effect(
     direction: u8,
     full_rgb: bool,
 ) -> Result<()> {
-    with_api(&app, |api| {
+    with_keyboard_api(&app, |api| {
         keyboard_driver::set_effect(
             api, profile, effect, r, g, b, brightness, speed, direction, full_rgb,
         )
@@ -156,37 +199,37 @@ fn keyboard_set_effect(
 
 #[tauri::command]
 fn keyboard_set_brightness(app: State<App>, profile: u8, value: u8) -> Result<()> {
-    with_api(&app, |api| {
+    with_keyboard_api(&app, |api| {
         keyboard_driver::set_brightness(api, profile, value)
     })
 }
 #[tauri::command]
 fn keyboard_set_speed(app: State<App>, profile: u8, value: u8) -> Result<()> {
-    with_api(&app, |api| keyboard_driver::set_speed(api, profile, value))
+    with_keyboard_api(&app, |api| keyboard_driver::set_speed(api, profile, value))
 }
 #[tauri::command]
 fn keyboard_set_direction(app: State<App>, profile: u8, left: bool) -> Result<()> {
-    with_api(&app, |api| {
+    with_keyboard_api(&app, |api| {
         keyboard_driver::set_direction(api, profile, left)
     })
 }
 #[tauri::command]
 fn keyboard_set_full_rgb(app: State<App>, profile: u8, on: bool) -> Result<()> {
-    with_api(&app, |api| keyboard_driver::set_full_rgb(api, profile, on))
+    with_keyboard_api(&app, |api| keyboard_driver::set_full_rgb(api, profile, on))
 }
 #[tauri::command]
 fn keyboard_set_color(app: State<App>, profile: u8, r: u8, g: u8, b: u8) -> Result<()> {
-    with_api(&app, |api| {
+    with_keyboard_api(&app, |api| {
         keyboard_driver::set_color(api, profile, r, g, b)
     })
 }
 #[tauri::command]
 fn keyboard_set_mode(app: State<App>, profile: u8, effect: u8) -> Result<()> {
-    with_api(&app, |api| keyboard_driver::set_mode(api, profile, effect))
+    with_keyboard_api(&app, |api| keyboard_driver::set_mode(api, profile, effect))
 }
 #[tauri::command]
 fn keyboard_set_active_profile(app: State<App>, profile: u8) -> Result<()> {
-    with_api(&app, |api| {
+    with_keyboard_api(&app, |api| {
         keyboard_driver::set_active_profile(api, profile)
     })
 }
@@ -199,12 +242,12 @@ fn keyboard_remap_keys(app: State<App>) -> Result<Vec<keyboard::RemapKey>> {
 #[tauri::command]
 fn keyboard_remap(app: State<App>, index: usize, kind: String, code: u8, code2: u8) -> Result<()> {
     let opt = keyboard_driver::encode_remap(&kind, code, code2);
-    with_api(&app, |api| keyboard_driver::remap(api, index, opt))
+    with_keyboard_api(&app, |api| keyboard_driver::remap(api, index, opt))
 }
 
 #[tauri::command]
 fn keyboard_restore_keymap(app: State<App>) -> Result<()> {
-    with_api(&app, keyboard_driver::restore_keymap)
+    with_keyboard_api(&app, keyboard_driver::restore_keymap)
 }
 
 #[tauri::command]
@@ -213,7 +256,7 @@ fn keyboard_set_custom_colors(
     profile: u8,
     cells: Vec<keyboard::CustomCell>,
 ) -> Result<()> {
-    with_api(&app, |api| {
+    with_keyboard_api(&app, |api| {
         keyboard_driver::set_custom_colors(api, profile, cells)
     })
 }
@@ -221,6 +264,8 @@ fn keyboard_set_custom_colors(
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let api = HidApi::new().expect("falha ao inicializar HIDAPI");
+    let keyboard_gate = Arc::new(Mutex::new(false));
+    let setup_gate = keyboard_gate.clone();
     tauri::Builder::default()
         .plugin(
             tauri_plugin_log::Builder::default()
@@ -234,8 +279,22 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .manage(App {
             api: Mutex::new(api),
+            keyboard_gate,
+        })
+        .setup(move |app| {
+            let directory = app.path().app_config_dir()?;
+            let smart = smart_notifications::SmartNotifications::start(
+                app.handle().clone(),
+                directory,
+                setup_gate,
+            );
+            app.manage(smart);
+            Ok(())
         })
         .invoke_handler(tauri::generate_handler![
+            smart_notifications_get,
+            smart_notifications_save,
+            smart_notifications_test,
             list_devices,
             mouse_read_state,
             mouse_set_led,
@@ -261,6 +320,13 @@ pub fn run() {
             keyboard_set_custom_colors,
             update::update_support,
         ])
-        .run(tauri::generate_context!())
-        .expect("erro ao executar a aplicação Tauri");
+        .build(tauri::generate_context!())
+        .expect("erro ao executar a aplicação Tauri")
+        .run(|app, event| {
+            if let tauri::RunEvent::ExitRequested { .. } = event {
+                if let Some(smart) = app.try_state::<smart_notifications::SmartNotifications>() {
+                    smart.shutdown();
+                }
+            }
+        });
 }

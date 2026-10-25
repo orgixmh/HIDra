@@ -18,6 +18,8 @@ import type {
   RemapKey,
   RemapKind,
   Rgb,
+  SmartSettings,
+  SmartView,
 } from "./types";
 
 declare global {
@@ -120,9 +122,45 @@ function log(cmd: string, args?: Record<string, unknown>): void {
   console.info(`[mock] ${cmd}`, args ?? {});
 }
 
+
+const mockSmart: SmartView = { settings: { enabled: false, rules: [] }, active: false,
+  status: "off", error: null, recent: [], lit_keys: [] };
+try {
+  const saved = JSON.parse(localStorage.getItem("hidra.smartNotifications.preview") ?? "null") as SmartSettings | null;
+  if (saved && typeof saved.enabled === "boolean" && Array.isArray(saved.rules)) {
+    mockSmart.settings = saved;
+    mockSmart.active = saved.enabled;
+    mockSmart.status = saved.enabled ? "listening" : "off";
+  }
+} catch { /* Preview preferences are optional. */ }
+
 function mockBackend<T>(cmd: string, args?: Record<string, unknown>): T {
   const a = (args ?? {}) as Record<string, unknown>;
   switch (cmd) {
+    case "smart_notifications_get":
+      return structuredCloneSafe(mockSmart) as T;
+    case "smart_notifications_save": {
+      mockSmart.settings = structuredCloneSafe(a.settings as SmartSettings);
+      mockSmart.active = mockSmart.settings.enabled;
+      mockSmart.status = mockSmart.active ? "listening" : "off";
+      mockSmart.lit_keys = [];
+      try { localStorage.setItem("hidra.smartNotifications.preview", JSON.stringify(mockSmart.settings)); } catch { /* optional */ }
+      return structuredCloneSafe(mockSmart) as T;
+    }
+    case "smart_notifications_test": {
+      if (!mockSmart.active) throw new Error("Turn on Smart Notifications before testing a rule");
+      const rule = mockSmart.settings.rules.find((rule) => rule.id === a.id);
+      if (!rule) throw new Error("Save the rule before testing it");
+      mockSmart.lit_keys = [...rule.keys];
+      mockSmart.recent.unshift({ app: "HIDra preview", title: rule.name, body: "Test notification", matched: true });
+      mockSmart.recent = mockSmart.recent.slice(0, 12);
+      setTimeout(() => {
+        mockSmart.lit_keys = [];
+        window.dispatchEvent(new CustomEvent("smart-notifications-mock", { detail: structuredCloneSafe(mockSmart) }));
+      }, rule.duration_seconds * 1000);
+      return structuredCloneSafe(mockSmart) as T;
+    }
+
     case "list_devices":
       return { ...mockDevices } as T;
 

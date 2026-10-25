@@ -69,6 +69,27 @@ code, open a
 [device request](https://github.com/luizjr/HIDra/issues/new?template=device-request.yml)
 with the output of `python3 scripts/probe-device.py --issue`.
 
+## Smart Notifications (Linux)
+
+On the wired UCAL K673SP-RGB-PRO, open **Smart Notifications** beside **Per-key
+colours**. Add a rule, select keys on the keyboard, choose a colour and duration,
+and save. Match an application (for example Viber), title/description text, or
+both. Leave Application empty to match website notification text from any
+browser. The browser or application must actually send a desktop notification.
+
+Turn the switch on to let notifications control the lighting. Other lighting
+controls are unavailable until it is off; switching off or closing HIDra restores
+the captured lighting mode. The switch and rules survive restarts. HIDra must
+remain running to receive notifications. Recent notification content stays in
+memory and is never saved. **Test rule** checks the selected lighting assignment.
+
+The listener uses the session D-Bus notification service without root or replacing
+your notification daemon. If the session disallows monitoring, the panel displays
+an error. Smart mode uses temporary RGB frames and keeps one HID handle open;
+its idle black frame needs periodic refreshes, without repeated device discovery
+or configuration reads. Other devices/platforms currently show this mode as
+unsupported.
+
 ## Install
 
 Grab the installer for your system from the

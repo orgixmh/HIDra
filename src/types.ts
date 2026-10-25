@@ -111,10 +111,31 @@ export interface KeyboardCapabilities {
   profiles: number;
   remap: boolean;
   per_key: boolean;
+  smart_notifications?: boolean;
   brightness_max: number;
   speed_min: number;
   speed_max: number;
   custom_effect: number;
   layout_aspect: number | null;
   layout: import("./keyboardLayout").KeyCell[] | null;
+}
+
+export interface NotificationRule {
+  id: string;
+  name: string;
+  enabled: boolean;
+  app: string;
+  text: string;
+  keys: number[];
+  color: Rgb;
+  duration_seconds: number;
+}
+export interface SmartSettings { enabled: boolean; rules: NotificationRule[] }
+export interface SmartView {
+  settings: SmartSettings;
+  active: boolean;
+  status: string;
+  error: string | null;
+  recent: { app: string; title: string; body: string; matched: boolean }[];
+  lit_keys: number[];
 }

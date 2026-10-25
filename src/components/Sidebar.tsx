@@ -5,6 +5,7 @@ import { SegmentedControl } from "./ui/SegmentedControl";
 
 interface SidebarProps {
   devices: ListDevices;
+  lightingLocked?: boolean;
   version: string;
   checking: boolean;
   onCheckUpdates: () => void;
@@ -26,6 +27,7 @@ interface DeviceMeta {
 
 export function Sidebar({
   devices,
+  lightingLocked,
   version,
   checking,
   onCheckUpdates,
@@ -109,6 +111,7 @@ export function Sidebar({
                 <span className="profilepick__label">{t("Perfil")}</span>
                 <SegmentedControl<Profile>
                   size="sm"
+                  disabled={lightingLocked}
                   value={profile}
                   onChange={onProfile}
                   options={[

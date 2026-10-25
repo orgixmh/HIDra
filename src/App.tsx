@@ -18,6 +18,7 @@ import {
 } from "./backend";
 import { useLocalStorage, useUpdater } from "./hooks";
 import { ToastProvider, useToast } from "./components/Toast";
+import { useSmartNotifications } from "./useSmartNotifications";
 import { Sidebar } from "./components/Sidebar";
 import { UpdateBanner } from "./components/UpdateBanner";
 import { SegmentedControl } from "./components/ui/SegmentedControl";
@@ -39,6 +40,7 @@ const EMPTY_DEVICES: ListDevices = {
 function AppShell() {
   const { t } = useTranslation();
   const notify = useToast();
+  const smart = useSmartNotifications();
 
   const [devices, setDevices] = useState<ListDevices>(EMPTY_DEVICES);
   const [selected, setSelected] = useLocalStorage<DeviceKind>("hidra.device", "mouse");
@@ -85,6 +87,8 @@ function AppShell() {
 
   const caps = devices.keyboard_capabilities;
   const keyboardProfile: Profile = caps?.profiles === 1 ? 1 : profile;
+  const smartReady = smart.view !== null;
+  const lightingLocked = smart.view?.active ?? false;
 
   // Initial load: devices + keyboard effect catalogue.
   useEffect(() => {
@@ -103,9 +107,9 @@ function AppShell() {
     if (selected === "mouse") loadMouse();
     else {
       setKeyboardState(null);
-      if (devices.keyboard) loadKeyboard(keyboardProfile);
+      if (devices.keyboard && smartReady && !lightingLocked) loadKeyboard(keyboardProfile);
     }
-  }, [selected, keyboardProfile, devices.keyboard_model, devices.keyboard, loadMouse, loadKeyboard]);
+  }, [selected, keyboardProfile, devices.keyboard_model, devices.keyboard, smartReady, lightingLocked, loadMouse, loadKeyboard]);
 
   // Device discovery sends a model query on some keyboards. Keep it explicit:
   // polling can interrupt their lighting even when no setting is being changed.
@@ -120,6 +124,7 @@ function AppShell() {
     <div className="app">
       <Sidebar
         devices={devices}
+        lightingLocked={smart.view?.active ?? false}
         version={updater.version}
         checking={updater.state.kind === "checking"}
         onCheckUpdates={() => void updater.check(true)}
@@ -171,6 +176,7 @@ function AppShell() {
           <KeyboardPanel
             key={devices.keyboard_model ?? "none"}
             state={keyboardState}
+            smart={smart}
             capabilities={caps}
             name={devices.keyboard_model ?? t("Teclado")}
             effects={effects}

@@ -18,7 +18,7 @@ fn invalid(message: &str) -> DevError {
     DevError::Invalid(message.into())
 }
 
-fn packet(command: u8, arg: u8, len: usize, data: &[u8]) -> Result<[u8; REPORT_LEN]> {
+pub(crate) fn packet(command: u8, arg: u8, len: usize, data: &[u8]) -> Result<[u8; REPORT_LEN]> {
     if len > 512 || data.len() > len {
         return Err(invalid("invalid feature payload length"));
     }
@@ -42,7 +42,7 @@ fn decode_reply<'a>(request: &[u8; REPORT_LEN], reply: &'a [u8]) -> Result<&'a [
     Ok(data)
 }
 
-fn read(link: &Link, command: u8, arg: u8, len: usize) -> Result<Vec<u8>> {
+pub(crate) fn read(link: &Link, command: u8, arg: u8, len: usize) -> Result<Vec<u8>> {
     let request = packet(command, arg, len, &[])?;
     let mut last = invalid("keyboard did not reply");
     for _ in 0..4 {
@@ -60,7 +60,7 @@ fn read(link: &Link, command: u8, arg: u8, len: usize) -> Result<Vec<u8>> {
     Err(last)
 }
 
-fn write_verified(link: &Link, command: u8, data: &[u8]) -> Result<()> {
+pub(crate) fn write_verified(link: &Link, command: u8, data: &[u8]) -> Result<()> {
     // Only configuration registers. No arbitrary command or firmware interface.
     if !matches!(command, 0x04 | 0x0a | 0x06) {
         return Err(invalid("unsupported write"));
@@ -79,7 +79,7 @@ fn write_verified(link: &Link, command: u8, data: &[u8]) -> Result<()> {
     Ok(())
 }
 
-fn open(api: &HidApi) -> Result<(Link, &'static SinowealthSpec)> {
+pub(crate) fn open(api: &HidApi) -> Result<(Link, &'static SinowealthSpec)> {
     let found = hid::find(api, Kind::Keyboard).ok_or(DevError::NotFound)?;
     if found.device.protocol != Protocol::Sinowealth520 {
         return Err(DevError::Unsupported(found.full_name()));

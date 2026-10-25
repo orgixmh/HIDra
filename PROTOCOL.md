@@ -245,3 +245,35 @@ and after an explicit Apply. Write verification remains part of that action.
 
 The owner confirmed on 2026-10-25 (Ubuntu 24.04.5 / X11) that leaving HIDra
 open and idle after this change no longer causes periodic keyboard blinking.
+
+### Notification streaming (Linux)
+
+The K673 OEM lighting stream uses command `08`, ARG 0, payload length 378.
+Its RGB bytes are interleaved by matrix slot (`off = slot*3`), unlike the saved
+command `06` colour planes. Only keys in the model table are accepted. To enter
+streaming, preserve the captured 128-byte config and apply the table's patches:
+offset 9 = 1, 10 = 21, 59 = 0x47. Wait 400ms for the firmware's mode repaint
+before sending a black frame. Keep sending the current volatile frame every
+350ms, including black when no alert is active; the firmware does not retain
+this stream indefinitely. No model queries, configuration reads, reconnects or
+persistent colour writes occur per frame. Manual controls are gated while owned.
+
+The original mode config is saved atomically before activation, restored and
+verified on Off/normal exit, and retained for recovery after errors or interruption.
+The saved command `06` per-key colour table is never modified by notifications.
+A command `06` restoration in the first experimental stream test returned a
+feature-report protocol error; production notification code therefore uses only
+volatile `08` frames and mode configuration `04`, and never rewrites that table.
+The owner confirmed Q illuminated cyan in both direct streaming tests on
+2026-10-25; the second test also successfully verified the entry config on restore.
+Integrated On/Off visual confirmation remains a separate owner check.
+
+Desktop events are monitored on a private session D-Bus connection using
+`org.freedesktop.DBus.Monitoring.BecomeMonitor`, restricted to FDO `Notify` and
+GTK `AddNotification`. Portal-forwarded notifications arrive at these final
+endpoints too. The monitor never takes ownership of the notification service.
+Rules match case-insensitive app substrings and optional title/body substrings;
+a blank app accepts all browsers. Notification contents remain in a bounded RAM
+history, while rules and the enabled preference are stored in the app config
+directory. On mode restore failure the recovery file and exclusive gate remain
+so manual writes cannot overwrite the pending original configuration.

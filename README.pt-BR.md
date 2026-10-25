@@ -62,6 +62,28 @@ mexer em código, abra um
 [pedido de dispositivo](https://github.com/luizjr/HIDra/issues/new?template=device-request.yml)
 com a saída de `python3 scripts/probe-device.py --issue`.
 
+## Smart Notifications (Linux)
+
+No UCAL K673SP-RGB-PRO conectado por cabo, abra **Smart Notifications** ao lado
+de **Cores por tecla**. Adicione uma regra, selecione teclas no teclado, escolha
+cor e duração e salve. Combine aplicativo (por exemplo, Viber), texto do
+título/descrição ou ambos. Deixe Aplicativo vazio para reconhecer o texto de
+notificações de sites em qualquer navegador. O aplicativo ou navegador precisa
+enviar uma notificação real para a área de trabalho.
+
+Ative o interruptor para entregar o controle da iluminação às notificações. Os
+outros controles ficam indisponíveis até desativá-lo; desativar ou fechar o HIDra
+restaura o modo de iluminação capturado. O estado do interruptor e as regras são
+preservados entre execuções. O HIDra precisa permanecer aberto. O conteúdo das
+notificações recentes fica apenas na memória. **Testar regra** verifica as teclas
+e a cor atribuídas.
+
+O monitor usa o D-Bus da sessão, sem root nem substituir o serviço de notificações.
+Se a sessão bloquear o monitoramento, o painel apresenta um erro. Quadros RGB
+temporários usam uma conexão HID aberta; o quadro preto ocioso exige atualização
+periódica, sem redescoberta nem leitura repetida da configuração. Outros dispositivos
+e plataformas ainda não oferecem este modo.
+
 ## Instalação
 
 Baixe o instalador do seu sistema na

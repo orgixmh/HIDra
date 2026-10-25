@@ -163,6 +163,8 @@ pub fn of_kind(kind: Kind) -> impl Iterator<Item = &'static Device> {
 #[derive(Debug)]
 pub struct SinowealthSpec {
     pub identity: [u8; 6],
+    /// Mode changes required before volatile RGB streaming (offset, value).
+    pub stream_config: &'static [(usize, u8)],
     pub aspect: f32,
     pub brightness_max: u8,
     pub speed_max: u8,
@@ -194,6 +196,7 @@ pub struct KeyboardKey {
 // User's K673SP replies to model query 0x82 with this complete six-byte ID.
 const K673SP: SinowealthSpec = SinowealthSpec {
     identity: [3, 0, 0, 0, 0, 0xba],
+    stream_config: &[(9, 1), (10, 21), (59, 0x47)],
     aspect: 2.615,
     brightness_max: 4,
     speed_max: 4,
