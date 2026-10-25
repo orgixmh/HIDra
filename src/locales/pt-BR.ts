@@ -294,5 +294,10 @@ export const ptBR = {
   "Each rule needs a name, a filter, at least one key and a valid alert duration.": "Cada regra precisa de nome, filtro, pelo menos uma tecla e uma duração válida.",
   "Keys return to the background colour after alerts. When rules overlap, the newest alert takes priority.": "As teclas retornam à cor de fundo após os alertas. Quando regras se sobrepõem, o alerta mais recente tem prioridade.",
   "Choose 1, 5 or 10 minutes, or until dismissed": "Escolha 1, 5 ou 10 minutos, ou até ser dispensada",
-  "The desktop notification service restarted. Retry the connection.": "O serviço de notificações reiniciou. Tente conectar novamente."
+  "The desktop notification service restarted. Retry the connection.": "O serviço de notificações reiniciou. Tente conectar novamente.",
+  "Notification source": "Origem da notificação",
+  "Custom application or website": "Aplicativo ou site personalizado",
+  "Gmail (Browser)": "Gmail (Navegador)",
+  "Matches mail.google.com in the notification title or description, from any browser. No manual filter is needed.": "Reconhece mail.google.com no título ou na descrição da notificação, de qualquer navegador. Não é necessário configurar um filtro manual.",
+  "Use description": "Usar descrição"
 } satisfies Record<keyof typeof en, string>;

@@ -69,7 +69,11 @@ de **Cores por tecla**. Adicione uma regra, selecione teclas no teclado, escolha
 cor, duração e piscar opcional e salve. Combine aplicativo (por exemplo, Viber), texto do
 título/descrição ou ambos. Deixe Aplicativo vazio para reconhecer o texto de
 notificações de sites em qualquer navegador. O aplicativo ou navegador precisa
-enviar uma notificação real para a área de trabalho.
+enviar uma notificação real para a área de trabalho. Selecione **Origem da
+notificação → Gmail (Navegador)** para reconhecer automaticamente `mail.google.com`
+no título ou na descrição, em qualquer navegador, sem filtrar pelo remetente.
+Para regras personalizadas, **Usar descrição** copia o terceiro campo de uma
+notificação recente.
 
 Ative o interruptor para entregar o controle da iluminação às notificações. Os
 efeitos normais não funcionam simultaneamente. Escolha uma **Cor de fundo** e

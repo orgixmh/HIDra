@@ -75,7 +75,11 @@ On the wired UCAL K673SP-RGB-PRO, open **Smart Notifications** beside **Per-key
 colours**. Add a rule, select keys on the keyboard, choose a colour, optional blinking and duration,
 and save. Match an application (for example Viber), title/description text, or
 both. Leave Application empty to match website notification text from any
-browser. The browser or application must actually send a desktop notification.
+browser. Select **Notification source → Gmail (Browser)** to match
+`mail.google.com` automatically in the notification title or description, from
+any browser. This does not filter by the mail sender. For custom rules,
+**Use description** copies the third field from a recent notification.
+The browser or application must actually send a desktop notification.
 
 Turn the switch on to let notifications control the lighting. Other lighting
 effects cannot run simultaneously. Choose a solid **Background colour** and save

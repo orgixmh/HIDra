@@ -292,5 +292,10 @@ export const en = {
   "Each rule needs a name, a filter, at least one key and a valid alert duration.": "Each rule needs a name, a filter, at least one key and a valid alert duration.",
   "Keys return to the background colour after alerts. When rules overlap, the newest alert takes priority.": "Keys return to the background colour after alerts. When rules overlap, the newest alert takes priority.",
   "Choose 1, 5 or 10 minutes, or until dismissed": "Choose 1, 5 or 10 minutes, or until dismissed",
-  "The desktop notification service restarted. Retry the connection.": "The desktop notification service restarted. Retry the connection."
+  "The desktop notification service restarted. Retry the connection.": "The desktop notification service restarted. Retry the connection.",
+  "Notification source": "Notification source",
+  "Custom application or website": "Custom application or website",
+  "Gmail (Browser)": "Gmail (Browser)",
+  "Matches mail.google.com in the notification title or description, from any browser. No manual filter is needed.": "Matches mail.google.com in the notification title or description, from any browser. No manual filter is needed.",
+  "Use description": "Use description"
 } as const;

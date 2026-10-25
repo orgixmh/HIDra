@@ -815,4 +815,29 @@ mod tests {
             .iter()
             .any(|cell| cell.1 == rule().color));
     }
+    #[test]
+    fn gmail_browser_preset_matches_the_body_origin_without_matching_the_sender() {
+        let mut rule = rule();
+        rule.app.clear();
+        rule.text = "mail.google.com".into();
+        for browser in [
+            "Brave (brave-browser)",
+            "Firefox",
+            "Chromium",
+            "Another browser",
+        ] {
+            let mut event = DesktopNotification {
+                app: browser.into(),
+                title: "Mail sender".into(),
+                body: "mail.google.com teste".into(),
+            };
+            assert!(rule.matches(&event));
+            event.body = "MAIL.GOOGLE.COM New message".into();
+            assert!(rule.matches(&event));
+            event.body = "facebook.com teste".into();
+            assert!(!rule.matches(&event));
+            event.body = "A different Gmail notification without the domain".into();
+            assert!(!rule.matches(&event));
+        }
+    }
 }
