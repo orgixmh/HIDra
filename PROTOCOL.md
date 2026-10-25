@@ -254,7 +254,7 @@ command `06` colour planes. Only keys in the model table are accepted. To enter
 streaming, preserve the captured 128-byte config and apply the table's patches:
 offset 9 = 1, 10 = 21, 59 = 0x47. Wait 400ms for the firmware's mode repaint
 before sending a black frame. Keep sending the current volatile frame every
-350ms, including black when no alert is active; the firmware does not retain
+350ms, including the selected background when no alert is active; the firmware does not retain
 this stream indefinitely. No model queries, configuration reads, reconnects or
 persistent colour writes occur per frame. Manual controls are gated while owned.
 
@@ -266,7 +266,8 @@ feature-report protocol error; production notification code therefore uses only
 volatile `08` frames and mode configuration `04`, and never rewrites that table.
 The owner confirmed Q illuminated cyan in both direct streaming tests on
 2026-10-25; the second test also successfully verified the entry config on restore.
-Integrated On/Off visual confirmation remains a separate owner check.
+The owner subsequently confirmed the integrated UI, On/Off flow and a real CLI
+notification matching a text filter worked on the same keyboard/desktop.
 
 Desktop events are monitored on a private session D-Bus connection using
 `org.freedesktop.DBus.Monitoring.BecomeMonitor`, restricted to FDO `Notify` and
@@ -277,3 +278,21 @@ a blank app accepts all browsers. Notification contents remain in a bounded RAM
 history, while rules and the enabled preference are stored in the app config
 directory. On mode restore failure the recovery file and exclusive gate remain
 so manual writes cannot overwrite the pending original configuration.
+
+Notification rendering now fills every supported physical key with the user's
+background RGB, then overlays active alerts in arrival order. Optional blinking
+alternates alert/background every 700ms while retaining the 350ms volatile
+keepalive cadence. Neither background nor blinking changes the saved colour table.
+An expired/cleared alert reveals the previous overlapping alert or background.
+
+Durations are 0 (until desktop dismissal), 60, 300 or 600 seconds. Legacy durations
+1–59 migrate to 0; tests run for 10 seconds and Clear alerts affects only HIDra.
+FDO Notify calls are correlated by caller unique name + serial with the server's
+method return, producing the real notification ID. Ignore GNOME's forwarded Notify
+copy; its shell and public proxy share IDs. Observe NotificationClosed from both
+(the proxy may no longer forward to a client that exited). Track every notification
+separately and replace its previous alerts when its ID is updated. GTK Add/Remove
+uses (app ID, notification ID), but user dismissal has no standard GTK signal;
+manual clearing/fixed durations remain available. A public notification daemon
+restart ends monitoring with an explicit retry error rather than reusing stale IDs.
+No notification-centre history is imported or persisted.

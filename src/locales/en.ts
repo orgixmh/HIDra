@@ -275,5 +275,22 @@ export const en = {
   "Desktop notification monitor did not start": "Desktop notification monitor did not start",
   "Notification worker stopped": "Notification worker stopped",
   "Notification settings timed out": "Notification settings timed out",
-  "Notification test timed out": "Notification test timed out"
+  "Notification test timed out": "Notification test timed out",
+  "Smart Notifications replaces normal lighting effects with a solid background and notification colours. Turning it off restores your previous lighting.": "Smart Notifications replaces normal lighting effects with a solid background and notification colours. Turning it off restores your previous lighting.",
+  "Background colour": "Background colour",
+  "All keys use this colour between alerts. Save rules to apply your background.": "All keys use this colour between alerts. Save rules to apply your background.",
+  "Clear alerts": "Clear alerts",
+  "Alerts cleared": "Alerts cleared",
+  "Keep alert active": "Keep alert active",
+  "Dismissed means removed from desktop notifications, not read inside the app. Some apps do not report dismissals; use Clear alerts if needed.": "Dismissed means removed from desktop notifications, not read inside the app. Some apps do not report dismissals; use Clear alerts if needed.",
+  "Until notification is dismissed": "Until notification is dismissed",
+  "1 minute": "1 minute",
+  "5 minutes": "5 minutes",
+  "10 minutes": "10 minutes",
+  "Blink notification keys": "Blink notification keys",
+  "Test rule runs for 10 seconds. Real notifications follow the selected duration.": "Test rule runs for 10 seconds. Real notifications follow the selected duration.",
+  "Each rule needs a name, a filter, at least one key and a valid alert duration.": "Each rule needs a name, a filter, at least one key and a valid alert duration.",
+  "Keys return to the background colour after alerts. When rules overlap, the newest alert takes priority.": "Keys return to the background colour after alerts. When rules overlap, the newest alert takes priority.",
+  "Choose 1, 5 or 10 minutes, or until dismissed": "Choose 1, 5 or 10 minutes, or until dismissed",
+  "The desktop notification service restarted. Retry the connection.": "The desktop notification service restarted. Retry the connection."
 } as const;

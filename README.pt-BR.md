@@ -66,21 +66,38 @@ com a saída de `python3 scripts/probe-device.py --issue`.
 
 No UCAL K673SP-RGB-PRO conectado por cabo, abra **Smart Notifications** ao lado
 de **Cores por tecla**. Adicione uma regra, selecione teclas no teclado, escolha
-cor e duração e salve. Combine aplicativo (por exemplo, Viber), texto do
+cor, duração e piscar opcional e salve. Combine aplicativo (por exemplo, Viber), texto do
 título/descrição ou ambos. Deixe Aplicativo vazio para reconhecer o texto de
 notificações de sites em qualquer navegador. O aplicativo ou navegador precisa
 enviar uma notificação real para a área de trabalho.
 
 Ative o interruptor para entregar o controle da iluminação às notificações. Os
-outros controles ficam indisponíveis até desativá-lo; desativar ou fechar o HIDra
+efeitos normais não funcionam simultaneamente. Escolha uma **Cor de fundo** e
+salve com as regras para manter as outras teclas iluminadas. Desativar ou fechar o HIDra
 restaura o modo de iluminação capturado. O estado do interruptor e as regras são
 preservados entre execuções. O HIDra precisa permanecer aberto. O conteúdo das
 notificações recentes fica apenas na memória. **Testar regra** verifica as teclas
 e a cor atribuídas.
 
+Novas regras usam **Até a notificação ser dispensada** por padrão: a remoção da
+notificação da área de trabalho, não a leitura dentro do aplicativo. Outras opções
+mantêm o alerta por **1, 5 ou 10 minutos**. As teclas podem piscar entre a cor do
+alerta e a cor de fundo. Cada notificação é acompanhada separadamente, inclusive
+atualizações; dispensar uma não apaga outra na mesma tecla. **Limpar alertas**
+limpa apenas os alertas do teclado. **Testar regra** dura dez segundos.
+
+Notificações FDO usam o ID retornado pelo servidor e o sinal `NotificationClosed`.
+No Ubuntu/GNOME o alerta continua após o banner sumir se a notificação permanece
+na central. Aplicativos GTK são identificados por aplicativo e ID; a remoção pelo
+aplicativo é observada, mas GTK não fornece um sinal padrão de dispensa pelo
+usuário. Use **Limpar alertas** ou uma duração fixa quando o aplicativo não informar
+a remoção. Apenas notificações recebidas enquanto o modo está ativo são acompanhadas;
+o histórico anterior não é importado. Regras antigas com duração em segundos
+migram para a nova opção padrão de dispensa.
+
 O monitor usa o D-Bus da sessão, sem root nem substituir o serviço de notificações.
 Se a sessão bloquear o monitoramento, o painel apresenta um erro. Quadros RGB
-temporários usam uma conexão HID aberta; o quadro preto ocioso exige atualização
+temporários usam uma conexão HID aberta; o quadro de fundo ocioso exige atualização
 periódica, sem redescoberta nem leitura repetida da configuração. Outros dispositivos
 e plataformas ainda não oferecem este modo.
 

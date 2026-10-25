@@ -35,6 +35,10 @@ export function useSmartNotifications() {
     const next = await callBackend<SmartView>("smart_notifications_test", { id });
     setView(next); return next;
   }, []);
-  return { view, error, save, test };
+  const clear = useCallback(async () => {
+    const next = await callBackend<SmartView>("smart_notifications_clear");
+    setView(next); return next;
+  }, []);
+  return { view, error, save, test, clear };
 }
 export type SmartController = ReturnType<typeof useSmartNotifications>;

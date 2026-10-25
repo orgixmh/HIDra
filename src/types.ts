@@ -129,8 +129,9 @@ export interface NotificationRule {
   keys: number[];
   color: Rgb;
   duration_seconds: number;
+  blinking: boolean;
 }
-export interface SmartSettings { enabled: boolean; rules: NotificationRule[] }
+export interface SmartSettings { enabled: boolean; rules: NotificationRule[]; background: Rgb }
 export interface SmartView {
   settings: SmartSettings;
   active: boolean;

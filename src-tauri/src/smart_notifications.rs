@@ -5,7 +5,7 @@ use crate::notification_lighting::{self, Lighting, Snapshot};
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::{HashSet, VecDeque},
+    collections::{BTreeMap, HashSet},
     fs,
     io::Write,
     path::{Path, PathBuf},
@@ -20,11 +20,41 @@ use tauri::{AppHandle, Emitter};
 
 const EVENT: &str = "smart-notifications-changed";
 
-#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(default)]
 pub struct Settings {
     pub enabled: bool,
     pub rules: Vec<Rule>,
+    #[serde(default = "default_background")]
+    pub background: [u8; 3],
+}
+
+fn default_background() -> [u8; 3] {
+    [24, 24, 32]
+}
+impl Default for Settings {
+    fn default() -> Self {
+        Self {
+            enabled: false,
+            rules: Vec::new(),
+            background: default_background(),
+        }
+    }
+}
+// Existing second-based rules migrate to the new default without losing filters/keys.
+fn deserialize_duration<'de, D: serde::Deserializer<'de>>(d: D) -> Result<u16, D::Error> {
+    let seconds = u16::deserialize(d)?;
+    Ok(if (1..60).contains(&seconds) {
+        0
+    } else {
+        seconds
+    })
+}
+#[derive(Clone, Debug, PartialEq, Eq, Hash)]
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
+pub enum NotificationId {
+    Freedesktop(u32),
+    Gtk(String, String),
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -38,7 +68,10 @@ pub struct Rule {
     pub text: String,
     pub keys: Vec<u16>,
     pub color: [u8; 3],
+    #[serde(default, deserialize_with = "deserialize_duration")]
     pub duration_seconds: u16,
+    #[serde(default)]
+    pub blinking: bool,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -65,9 +98,12 @@ pub struct View {
     pub lit_keys: Vec<u16>,
 }
 
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 pub(crate) enum Command {
     Save(Settings, SyncSender<Result<View, String>>),
-    Notification(DesktopNotification),
+    Notification(DesktopNotification, NotificationId),
+    Closed(NotificationId),
+    Clear(SyncSender<Result<View, String>>),
     Test(String, SyncSender<Result<View, String>>),
     ListenerFailed(String),
     Resume,
@@ -119,7 +155,6 @@ impl SmartNotifications {
             lighting: None,
             listener: None,
             alerts: Vec::new(),
-            seen: VecDeque::new(),
             last_frame: Instant::now(),
         };
         thread::spawn(move || worker.run(receiver));
@@ -150,6 +185,14 @@ impl SmartNotifications {
         rx.recv_timeout(Duration::from_secs(5))
             .map_err(|_| "Notification test timed out".to_string())?
     }
+    pub fn clear(&self) -> Result<View, String> {
+        let (tx, rx) = mpsc::sync_channel(1);
+        self.sender
+            .send(Command::Clear(tx))
+            .map_err(|_| "Notification worker stopped")?;
+        rx.recv_timeout(Duration::from_secs(5))
+            .map_err(|_| "Notification test timed out".to_string())?
+    }
     pub fn shutdown(&self) {
         let (tx, rx) = mpsc::sync_channel(1);
         if self.sender.send(Command::Shutdown(tx)).is_ok() {
@@ -160,7 +203,9 @@ impl SmartNotifications {
 
 struct Alert {
     rule: Rule,
-    expires: Instant,
+    expires: Option<Instant>,
+    started: Instant,
+    notification: Option<NotificationId>,
 }
 struct Worker {
     handle: AppHandle,
@@ -172,7 +217,6 @@ struct Worker {
     lighting: Option<Lighting>,
     listener: Option<Listener>,
     alerts: Vec<Alert>,
-    seen: VecDeque<(String, Instant)>,
     last_frame: Instant,
 }
 
@@ -232,7 +276,6 @@ impl Worker {
     fn restore(&mut self) -> Result<(), String> {
         self.listener.take();
         self.alerts.clear();
-        self.seen.clear();
         if let Some(lighting) = &self.lighting {
             lighting
                 .restore(&lighting.snapshot)
@@ -254,9 +297,6 @@ impl Worker {
         atomic_json(&self.path, &settings)?;
         // Saving rules clears any alert using an old colour or key assignment.
         self.alerts.clear();
-        if let Some(lighting) = &self.lighting {
-            lighting.frame(&[]).map_err(|e| e.to_string())?;
-        }
         let mut view = self.view.lock();
         view.settings = settings;
         view.status = if view.settings.enabled {
@@ -267,50 +307,49 @@ impl Worker {
         .into();
         view.error = None;
         drop(view);
+        self.light()?;
         self.publish();
         Ok(self.view.lock().clone())
     }
     fn light(&mut self) -> Result<(), String> {
         if let Some(lighting) = &self.lighting {
-            let cells: Vec<_> = self
-                .alerts
-                .iter()
-                .flat_map(|alert| alert.rule.keys.iter().map(|&off| (off, alert.rule.color)))
-                .collect();
+            let background = self.view.lock().settings.background;
+            let cells = compose_cells(background, &self.alerts, Instant::now());
             lighting.frame(&cells).map_err(|e| e.to_string())?;
             self.last_frame = Instant::now();
         }
         Ok(())
     }
-    fn alert(&mut self, rule: Rule) {
-        self.alerts.retain(|alert| alert.rule.id != rule.id);
+    fn alert(&mut self, rule: Rule, notification: Option<NotificationId>) {
+        let now = Instant::now();
+        // Each notification owns its alert: dismissing one must not clear another.
+        // Synthetic tests always end after ten seconds and can also be cleared.
+        let seconds = if notification.is_none() {
+            10
+        } else {
+            rule.duration_seconds
+        };
+        if self.alerts.len() >= 512 {
+            self.alerts.remove(0);
+        }
         self.alerts.push(Alert {
-            expires: Instant::now() + Duration::from_secs(rule.duration_seconds.into()),
+            expires: (seconds != 0).then(|| now + Duration::from_secs(seconds.into())),
+            started: now,
+            notification,
             rule,
         });
     }
-    fn notification(&mut self, notification: DesktopNotification) -> Result<(), String> {
+    fn notification(
+        &mut self,
+        notification: DesktopNotification,
+        id: NotificationId,
+    ) -> Result<(), String> {
         if self.listener.is_none() {
             return Ok(());
         }
-        let now = Instant::now();
-        let fingerprint = format!(
-            "{}\n{}\n{}",
-            notification.app, notification.title, notification.body
-        );
-        self.seen
-            .retain(|(_, time)| now.duration_since(*time) < Duration::from_secs(2));
-        if self
-            .seen
-            .iter()
-            .any(|(previous, _)| previous == &fingerprint)
-        {
-            return Ok(());
-        }
-        self.seen.push_back((fingerprint, now));
-        if self.seen.len() > 32 {
-            self.seen.pop_front();
-        }
+        // A replacement may no longer match the original rule.
+        self.alerts
+            .retain(|alert| alert.notification.as_ref() != Some(&id));
         let rules: Vec<_> = self
             .view
             .lock()
@@ -322,7 +361,7 @@ impl Worker {
             .collect();
         let matched = !rules.is_empty();
         for rule in rules {
-            self.alert(rule);
+            self.alert(rule, Some(id.clone()));
         }
         {
             let mut view = self.view.lock();
@@ -335,9 +374,7 @@ impl Worker {
             );
             view.recent.truncate(12); // memory only: notification content is never saved
         }
-        if matched {
-            self.light()?;
-        }
+        self.light()?;
         self.publish();
         Ok(())
     }
@@ -346,7 +383,7 @@ impl Worker {
             let message = if self.lighting.is_none() || self.listener.is_none() {
                 receiver.recv().map_err(|_| RecvTimeoutError::Disconnected)
             } else {
-                // Firmware needs volatile keepalives even for an all-black idle frame.
+                // Firmware needs volatile keepalives even for an idle background frame.
                 // Reuse the open handle: no discovery, reads or saved-colour writes.
                 receiver.recv_timeout(
                     Duration::from_millis(350).saturating_sub(self.last_frame.elapsed()),
@@ -378,8 +415,8 @@ impl Worker {
                     }
                     self.publish();
                 }
-                Ok(Command::Notification(event)) => {
-                    if let Err(error) = self.notification(event) {
+                Ok(Command::Notification(event, id)) => {
+                    if let Err(error) = self.notification(event, id) {
                         self.fail(error);
                         self.publish();
                     }
@@ -396,7 +433,9 @@ impl Worker {
                     let result = if self.listener.is_none() {
                         Err("Turn on Smart Notifications before testing a rule".into())
                     } else if let Some(rule) = rule {
-                        self.alert(rule);
+                        self.alerts
+                            .retain(|alert| alert.notification.is_some() || alert.rule.id != id);
+                        self.alert(rule, None);
                         self.light().map(|_| {
                             self.publish();
                             self.view.lock().clone()
@@ -421,6 +460,22 @@ impl Worker {
                     }
                     let _ = reply.send(result);
                 }
+                Ok(Command::Closed(id)) => {
+                    dismiss_alerts(&mut self.alerts, &id);
+                    if let Err(error) = self.light() {
+                        self.fail(error);
+                    }
+                    self.publish();
+                }
+                Ok(Command::Clear(reply)) => {
+                    self.alerts.clear();
+                    let result = self.light();
+                    if let Err(error) = &result {
+                        self.fail(error.clone());
+                    }
+                    self.publish();
+                    let _ = reply.send(result.map(|_| self.view.lock().clone()));
+                }
                 Ok(Command::ListenerFailed(error)) => {
                     self.fail(error);
                     self.publish();
@@ -437,7 +492,11 @@ impl Worker {
                 }
             }
             let before = self.alerts.len();
-            self.alerts.retain(|alert| alert.expires > Instant::now());
+            self.alerts.retain(|alert| {
+                alert
+                    .expires
+                    .map_or(true, |deadline| deadline > Instant::now())
+            });
             let expired = before != self.alerts.len();
             if expired
                 || (self.listener.is_some()
@@ -452,6 +511,36 @@ impl Worker {
             }
         }
     }
+}
+
+fn dismiss_alerts(alerts: &mut Vec<Alert>, id: &NotificationId) {
+    // Fixed durations are independent of desktop dismissal; zero follows it.
+    alerts.retain(|alert| alert.notification.as_ref() != Some(id) || alert.expires.is_some());
+}
+
+fn compose_cells(background: [u8; 3], alerts: &[Alert], now: Instant) -> Vec<(u16, [u8; 3])> {
+    let mut cells: BTreeMap<_, _> = crate::devices::SUPPORTED
+        .iter()
+        .filter_map(|device| device.sinowealth)
+        .filter(|spec| !spec.stream_config.is_empty())
+        .flat_map(|spec| spec.keys.iter().map(|key| (key.off, background)))
+        .collect();
+    for alert in alerts {
+        // Two 350ms firmware frames per phase produces an even, gentle blink.
+        let visible =
+            !alert.rule.blinking || now.duration_since(alert.started).as_millis() / 700 % 2 == 0;
+        for key in &alert.rule.keys {
+            cells.insert(
+                *key,
+                if visible {
+                    alert.rule.color
+                } else {
+                    background
+                },
+            );
+        }
+    }
+    cells.into_iter().collect()
 }
 
 impl Rule {
@@ -489,8 +578,8 @@ fn validate(settings: &Settings) -> Result<(), String> {
         if rule.app.trim().is_empty() && rule.text.trim().is_empty() {
             return Err("Choose an application or title/description filter".into());
         }
-        if !(1..=60).contains(&rule.duration_seconds) {
-            return Err("Alert duration must be between 1 and 60 seconds".into());
+        if ![0, 60, 300, 600].contains(&rule.duration_seconds) {
+            return Err("Choose 1, 5 or 10 minutes, or until dismissed".into());
         }
         if rule.keys.is_empty() || rule.keys.len() > 126 {
             return Err("Select at least one keyboard key".into());
@@ -562,7 +651,8 @@ mod tests {
             text: String::new(),
             keys: vec![24],
             color: [100, 30, 255],
-            duration_seconds: 6,
+            duration_seconds: 0,
+            blinking: false,
         }
     }
     #[test]
@@ -595,6 +685,7 @@ mod tests {
         let mut settings = Settings {
             enabled: true,
             rules: vec![rule()],
+            background: default_background(),
         };
         assert!(validate(&settings).is_ok());
         settings.rules[0].keys = vec![1];
@@ -604,7 +695,7 @@ mod tests {
         settings.rules[0].app.clear();
         assert!(validate(&settings).is_err());
         settings.rules[0] = rule();
-        settings.rules[0].duration_seconds = 0;
+        settings.rules[0].duration_seconds = 120;
         assert!(validate(&settings).is_err());
         settings.rules = vec![rule(), rule()];
         assert!(validate(&settings).is_err());
@@ -624,6 +715,7 @@ mod tests {
         let mut settings = Settings {
             enabled: true,
             rules: vec![rule()],
+            background: default_background(),
         };
         atomic_json(&path, &settings).unwrap();
         let saved = read_json::<Settings>(&path).unwrap().unwrap();
@@ -634,5 +726,93 @@ mod tests {
         assert!(!read_json::<Settings>(&path).unwrap().unwrap().enabled);
         fs::remove_file(path).unwrap();
         fs::remove_dir(directory).unwrap();
+    }
+    #[test]
+    fn legacy_settings_keep_rules_and_gain_background_and_dismissal_default() {
+        let legacy = r#"{"enabled":true,"rules":[{"id":"one","name":"Messages","enabled":true,"app":"Viber","text":"","keys":[24],"color":[1,2,3],"duration_seconds":6}]}"#;
+        let saved: Settings = serde_json::from_str(legacy).unwrap();
+        assert_eq!(saved.background, default_background());
+        assert_eq!(saved.rules[0].duration_seconds, 0);
+        assert!(!saved.rules[0].blinking);
+        assert!(validate(&saved).is_ok());
+        for seconds in [0, 60, 300, 600] {
+            let mut changed = saved.clone();
+            changed.rules[0].duration_seconds = seconds;
+            assert!(validate(&changed).is_ok());
+        }
+    }
+    #[test]
+    fn blinking_returns_to_background_and_newest_alert_wins() {
+        let start = Instant::now();
+        let mut first = rule();
+        first.blinking = true;
+        let alerts = vec![Alert {
+            rule: first,
+            expires: None,
+            started: start,
+            notification: Some(NotificationId::Freedesktop(1)),
+        }];
+        let bg = [9, 8, 7];
+        let cells = compose_cells(bg, &alerts, start);
+        assert_eq!(
+            cells.iter().find(|cell| cell.0 == 24).unwrap().1,
+            [100, 30, 255]
+        );
+        assert!(cells
+            .iter()
+            .filter(|cell| cell.0 != 24)
+            .all(|cell| cell.1 == bg));
+        assert!(
+            compose_cells(bg, &alerts, start + Duration::from_millis(700))
+                .iter()
+                .all(|cell| cell.1 == bg)
+        );
+        let mut alerts = alerts;
+        let mut newer = rule();
+        newer.color = [1, 2, 3];
+        alerts.push(Alert {
+            rule: newer,
+            expires: None,
+            started: start,
+            notification: Some(NotificationId::Freedesktop(2)),
+        });
+        assert_eq!(
+            compose_cells(bg, &alerts, start)
+                .iter()
+                .find(|cell| cell.0 == 24)
+                .unwrap()
+                .1,
+            [1, 2, 3]
+        );
+        alerts.retain(|alert| alert.notification != Some(NotificationId::Freedesktop(2)));
+        assert_eq!(
+            compose_cells(bg, &alerts, start)
+                .iter()
+                .find(|cell| cell.0 == 24)
+                .unwrap()
+                .1,
+            [100, 30, 255]
+        );
+    }
+    #[test]
+    fn dismissal_clears_only_its_own_persistent_alerts() {
+        let start = Instant::now();
+        let mut alerts: Vec<Alert> = [1, 2, 3]
+            .into_iter()
+            .map(|id| Alert {
+                rule: rule(),
+                expires: (id == 3).then_some(start + Duration::from_secs(60)),
+                started: start,
+                notification: Some(NotificationId::Freedesktop(id)),
+            })
+            .collect();
+        dismiss_alerts(&mut alerts, &NotificationId::Freedesktop(1));
+        assert_eq!(alerts.len(), 2);
+        assert_eq!(alerts[0].notification, Some(NotificationId::Freedesktop(2)));
+        dismiss_alerts(&mut alerts, &NotificationId::Freedesktop(3));
+        assert_eq!(alerts.len(), 2, "timed alerts keep their chosen duration");
+        assert!(compose_cells([0; 3], &alerts, start)
+            .iter()
+            .any(|cell| cell.1 == rule().color));
     }
 }

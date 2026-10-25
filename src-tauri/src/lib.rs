@@ -67,6 +67,13 @@ fn smart_notifications_test(
     smart.test(id)
 }
 
+#[tauri::command]
+fn smart_notifications_clear(
+    smart: State<smart_notifications::SmartNotifications>,
+) -> std::result::Result<smart_notifications::View, String> {
+    smart.clear()
+}
+
 #[derive(Serialize)]
 struct Presence {
     keyboard: bool,
@@ -295,6 +302,7 @@ pub fn run() {
             smart_notifications_get,
             smart_notifications_save,
             smart_notifications_test,
+            smart_notifications_clear,
             list_devices,
             mouse_read_state,
             mouse_set_led,

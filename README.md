@@ -72,21 +72,39 @@ with the output of `python3 scripts/probe-device.py --issue`.
 ## Smart Notifications (Linux)
 
 On the wired UCAL K673SP-RGB-PRO, open **Smart Notifications** beside **Per-key
-colours**. Add a rule, select keys on the keyboard, choose a colour and duration,
+colours**. Add a rule, select keys on the keyboard, choose a colour, optional blinking and duration,
 and save. Match an application (for example Viber), title/description text, or
 both. Leave Application empty to match website notification text from any
 browser. The browser or application must actually send a desktop notification.
 
 Turn the switch on to let notifications control the lighting. Other lighting
-controls are unavailable until it is off; switching off or closing HIDra restores
+effects cannot run simultaneously. Choose a solid **Background colour** and save
+it with the rules to keep the other keys lit. Switching off or closing HIDra restores
 the captured lighting mode. The switch and rules survive restarts. HIDra must
 remain running to receive notifications. Recent notification content stays in
 memory and is never saved. **Test rule** checks the selected lighting assignment.
 
+New rules default to **Until notification is dismissed**. This follows desktop
+notification removal, not whether a message has been read inside its app. The
+other choices keep an alert for **1, 5 or 10 minutes**. Notification keys can
+blink between their alert colour and the background. Each notification is tracked
+separately, including updates/replacements, so dismissing one does not clear
+another notification on the same key. **Clear alerts** clears keyboard alerts
+without dismissing desktop notifications. **Test rule** runs for ten seconds.
+
+FDO notifications use the server's returned ID and `NotificationClosed` signal.
+On Ubuntu/GNOME this keeps alerts active after a banner hides if the notification
+remains in the notification centre. GTK applications are tracked by app and
+notification ID; app-requested removal is observed, but GTK provides no standard
+user-dismissal signal. If an app does not report removal, use **Clear alerts** or
+a fixed duration. Only notifications arriving while Smart mode is listening are
+tracked; existing notification history is not imported on startup. Existing rules
+with second-based durations migrate to the new dismissal default.
+
 The listener uses the session D-Bus notification service without root or replacing
 your notification daemon. If the session disallows monitoring, the panel displays
 an error. Smart mode uses temporary RGB frames and keeps one HID handle open;
-its idle black frame needs periodic refreshes, without repeated device discovery
+its idle background frame needs periodic refreshes, without repeated device discovery
 or configuration reads. Other devices/platforms currently show this mode as
 unsupported.
 

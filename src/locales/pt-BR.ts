@@ -277,5 +277,22 @@ export const ptBR = {
   "Desktop notification monitor did not start": "O monitor de notificações não iniciou",
   "Notification worker stopped": "O mecanismo de notificações foi interrompido",
   "Notification settings timed out": "Tempo limite ao salvar as configurações",
-  "Notification test timed out": "Tempo limite no teste de notificação"
+  "Notification test timed out": "Tempo limite no teste de notificação",
+  "Smart Notifications replaces normal lighting effects with a solid background and notification colours. Turning it off restores your previous lighting.": "O Smart Notifications substitui os efeitos normais por um fundo de cor sólida e cores de notificação. Desativá-lo restaura a iluminação anterior.",
+  "Background colour": "Cor de fundo",
+  "All keys use this colour between alerts. Save rules to apply your background.": "Todas as teclas usam esta cor entre alertas. Salve as regras para aplicar o fundo.",
+  "Clear alerts": "Limpar alertas",
+  "Alerts cleared": "Alertas limpos",
+  "Keep alert active": "Manter alerta ativo",
+  "Dismissed means removed from desktop notifications, not read inside the app. Some apps do not report dismissals; use Clear alerts if needed.": "Dispensada significa removida das notificações da área de trabalho, não lida dentro do aplicativo. Alguns aplicativos não informam a remoção; use Limpar alertas se necessário.",
+  "Until notification is dismissed": "Até a notificação ser dispensada",
+  "1 minute": "1 minuto",
+  "5 minutes": "5 minutos",
+  "10 minutes": "10 minutos",
+  "Blink notification keys": "Piscar teclas de notificação",
+  "Test rule runs for 10 seconds. Real notifications follow the selected duration.": "Testar regra dura 10 segundos. Notificações reais seguem a duração selecionada.",
+  "Each rule needs a name, a filter, at least one key and a valid alert duration.": "Cada regra precisa de nome, filtro, pelo menos uma tecla e uma duração válida.",
+  "Keys return to the background colour after alerts. When rules overlap, the newest alert takes priority.": "As teclas retornam à cor de fundo após os alertas. Quando regras se sobrepõem, o alerta mais recente tem prioridade.",
+  "Choose 1, 5 or 10 minutes, or until dismissed": "Escolha 1, 5 ou 10 minutos, ou até ser dispensada",
+  "The desktop notification service restarted. Retry the connection.": "O serviço de notificações reiniciou. Tente conectar novamente."
 } satisfies Record<keyof typeof en, string>;

@@ -123,12 +123,14 @@ function log(cmd: string, args?: Record<string, unknown>): void {
 }
 
 
-const mockSmart: SmartView = { settings: { enabled: false, rules: [] }, active: false,
+const mockSmart: SmartView = { settings: { enabled: false, rules: [], background: [24, 24, 32] }, active: false,
   status: "off", error: null, recent: [], lit_keys: [] };
 try {
   const saved = JSON.parse(localStorage.getItem("hidra.smartNotifications.preview") ?? "null") as SmartSettings | null;
   if (saved && typeof saved.enabled === "boolean" && Array.isArray(saved.rules)) {
-    mockSmart.settings = saved;
+    mockSmart.settings = { ...saved, background: saved.background ?? [24, 24, 32],
+      rules: saved.rules.map((rule) => ({ ...rule, blinking: rule.blinking ?? false,
+        duration_seconds: [0, 60, 300, 600].includes(rule.duration_seconds) ? rule.duration_seconds : 0 })) };
     mockSmart.active = saved.enabled;
     mockSmart.status = saved.enabled ? "listening" : "off";
   }
@@ -147,6 +149,10 @@ function mockBackend<T>(cmd: string, args?: Record<string, unknown>): T {
       try { localStorage.setItem("hidra.smartNotifications.preview", JSON.stringify(mockSmart.settings)); } catch { /* optional */ }
       return structuredCloneSafe(mockSmart) as T;
     }
+    case "smart_notifications_clear": {
+      mockSmart.lit_keys = [];
+      return structuredCloneSafe(mockSmart) as T;
+    }
     case "smart_notifications_test": {
       if (!mockSmart.active) throw new Error("Turn on Smart Notifications before testing a rule");
       const rule = mockSmart.settings.rules.find((rule) => rule.id === a.id);
@@ -157,7 +163,7 @@ function mockBackend<T>(cmd: string, args?: Record<string, unknown>): T {
       setTimeout(() => {
         mockSmart.lit_keys = [];
         window.dispatchEvent(new CustomEvent("smart-notifications-mock", { detail: structuredCloneSafe(mockSmart) }));
-      }, rule.duration_seconds * 1000);
+      }, 10_000);
       return structuredCloneSafe(mockSmart) as T;
     }
 
