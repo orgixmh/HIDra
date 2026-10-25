@@ -233,3 +233,15 @@ keyboard, then the complete original config was restored and compared. The
 384-byte custom-colour buffer was successfully read; per-key writes/layout have
 not yet been visually confirmed. `Support::Verified` records the owner's
 brightness/colour confirmation, not a claim that every effect or key was tested.
+
+### Idle behaviour
+
+Device discovery for this protocol performs an active model query. Repeating
+that query every four seconds was reported to interrupt the K673's lighting
+(blinking). The app therefore discovers devices at startup and when the user
+presses **Atualizar dispositivos**; it has no background device polling timer.
+Settings are loaded when a connected keyboard is selected or its profile changes,
+and after an explicit Apply. Write verification remains part of that action.
+
+The owner confirmed on 2026-10-25 (Ubuntu 24.04.5 / X11) that leaving HIDra
+open and idle after this change no longer causes periodic keyboard blinking.

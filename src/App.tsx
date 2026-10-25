@@ -90,6 +90,7 @@ function AppShell() {
   }, [refreshDevices]);
 
   useEffect(() => {
+    if (!devices.keyboard) return;
     keyboardEffects()
       .then(setEffects)
       .catch((e: unknown) => notify(String(e), "error"));
@@ -100,15 +101,12 @@ function AppShell() {
     if (selected === "mouse") loadMouse();
     else {
       setKeyboardState(null);
-      loadKeyboard(keyboardProfile);
+      if (devices.keyboard) loadKeyboard(keyboardProfile);
     }
   }, [selected, keyboardProfile, devices.keyboard_model, devices.keyboard, loadMouse, loadKeyboard]);
 
-  // Poll list_devices every 4s to keep the connection dots fresh.
-  useEffect(() => {
-    const id = setInterval(refreshDevices, 4000);
-    return () => clearInterval(id);
-  }, [refreshDevices]);
+  // Device discovery sends a model query on some keyboards. Keep it explicit:
+  // polling can interrupt their lighting even when no setting is being changed.
 
   const updater = useUpdater();
 
@@ -146,6 +144,14 @@ function AppShell() {
               { value: "keyboard", label: "Teclado" },
             ]}
           />
+          <button
+            type="button"
+            className="btn"
+            onClick={refreshDevices}
+            title="Procurar dispositivos após conectar ou desconectar o cabo/dongle"
+          >
+            Atualizar dispositivos
+          </button>
           <div className="topbar__status">
             <span className={`led${devices.mouse ? " led--on" : ""}`} />
             Mouse
