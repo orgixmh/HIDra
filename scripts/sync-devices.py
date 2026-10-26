@@ -33,6 +33,10 @@ START, END = "<!-- devices:start -->", "<!-- devices:end -->"
 
 # What a protocol gives the user, for the feature column. One line per protocol.
 FEATURES = {
+    "CompxKeyboard20": {
+        "en": "2.4 GHz lighting + Smart Notifications (model identity checked); saved per-key colours require USB",
+        "pt": "iluminação 2.4 GHz + Smart Notifications (modelo verificado); cores por tecla salvas exigem USB",
+    },
     "Sinowealth520": {
         "en": "wired lighting, 18 effects + per-key colour (model identity checked); no remap/profiles",
         "pt": "iluminação via cabo, 18 efeitos + cor por tecla (modelo verificado); sem remapeamento/perfis",

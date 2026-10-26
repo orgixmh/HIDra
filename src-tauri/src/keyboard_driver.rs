@@ -32,7 +32,7 @@ pub fn capabilities(api: &HidApi) -> Option<Capabilities> {
         Some(Capabilities {
             profiles: 1,
             remap: false,
-            per_key: true,
+            per_key: found.device.protocol == Protocol::Sinowealth520,
             smart_notifications: cfg!(target_os = "linux") && !spec.stream_config.is_empty(),
             brightness_max: spec.brightness_max,
             speed_min: 0,
@@ -59,7 +59,11 @@ pub fn capabilities(api: &HidApi) -> Option<Capabilities> {
 
 pub fn find(api: &HidApi) -> Option<hid::Found> {
     let found = hid::find(api, Kind::Keyboard)?;
-    if found.device.protocol == Protocol::Sinowealth520 && !sinowealth::identify(api) {
+    if matches!(
+        found.device.protocol,
+        Protocol::Sinowealth520 | Protocol::CompxKeyboard20
+    ) && !sinowealth::identify(api)
+    {
         return None;
     }
     Some(found)
@@ -67,7 +71,7 @@ pub fn find(api: &HidApi) -> Option<hid::Found> {
 
 pub fn read_state(api: &HidApi, profile: u8) -> Result<keyboard::KbState> {
     match hid::find(api, Kind::Keyboard).map(|f| f.device.protocol) {
-        Some(Protocol::Sinowealth520) => sinowealth::read_state(api),
+        Some(Protocol::Sinowealth520 | Protocol::CompxKeyboard20) => sinowealth::read_state(api),
         _ => Ok(keyboard::read_state(api, profile)),
     }
 }
@@ -94,7 +98,7 @@ pub fn set_effect(
     full_rgb: bool,
 ) -> Result<()> {
     match hid::find(api, Kind::Keyboard).map(|f| f.device.protocol) {
-        Some(Protocol::Sinowealth520) => {
+        Some(Protocol::Sinowealth520 | Protocol::CompxKeyboard20) => {
             if profile != 1 || direction != 0 {
                 return Err(DevError::Invalid("unsupported profile or direction".into()));
             }
@@ -112,7 +116,7 @@ pub fn set_custom_colors(
     cells: Vec<keyboard::CustomCell>,
 ) -> Result<()> {
     match hid::find(api, Kind::Keyboard).map(|f| f.device.protocol) {
-        Some(Protocol::Sinowealth520) => {
+        Some(Protocol::Sinowealth520 | Protocol::CompxKeyboard20) => {
             if profile != 1 {
                 return Err(DevError::Invalid(
                     "this keyboard has one lighting configuration".into(),

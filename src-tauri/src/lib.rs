@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 mod autostart;
+mod compx_keyboard;
 mod desktop_lifecycle;
 mod desktop_notifications;
 mod devices;
@@ -114,6 +115,7 @@ fn autostart_set(
 #[derive(Serialize)]
 struct Presence {
     keyboard: bool,
+    keyboard_mode: Option<String>,
     keyboard_capabilities: Option<keyboard_driver::Capabilities>,
     mouse: bool,
     mouse_mode: Option<String>,
@@ -141,6 +143,7 @@ fn list_devices(app: State<App>) -> Presence {
         let m = hid::find(api, hid::Kind::Mouse);
         Presence {
             keyboard: kb.is_some(),
+            keyboard_mode: kb.as_ref().map(|found| found.connection().to_string()),
             keyboard_capabilities: keyboard_driver::capabilities(api),
             mouse: m.is_some(),
             mouse_mode: m.as_ref().map(|f| f.connection().to_string()),

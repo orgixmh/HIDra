@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Temporary notification frames. No flash writes occur on incoming alerts.
-use crate::devices::SinowealthSpec;
+use crate::devices::{Protocol, SinowealthSpec};
 use crate::error::{DevError, Result};
 use crate::hid::Link;
 use crate::sinowealth;
@@ -8,9 +8,11 @@ use hidapi::HidApi;
 use serde::{Deserialize, Serialize};
 use std::{thread, time::Duration};
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Serialize, PartialEq, Eq)]
 pub struct Snapshot {
     pub identity: [u8; 6],
+    #[serde(default)]
+    pub receiver: bool,
     pub config: Vec<u8>,
 }
 
@@ -32,6 +34,7 @@ impl Lighting {
         let config = sinowealth::read(&link, 0x84, 0, 128)?;
         let snapshot = Snapshot {
             identity: spec.identity,
+            receiver: link.protocol == Protocol::CompxKeyboard20,
             config,
         };
         validate_snapshot(spec, &snapshot)?;
@@ -49,29 +52,64 @@ impl Lighting {
         for &(offset, value) in self.spec.stream_config {
             config[offset] = value;
         }
-        sinowealth::write_verified(&self.link, 0x04, &config)?;
+        if config != self.snapshot.config {
+            sinowealth::write_verified(&self.link, 0x04, &config)?;
+        }
         // The config write schedules a firmware repaint. Streaming before that
         // repaint races it and makes a correctly transmitted frame disappear.
-        thread::sleep(Duration::from_millis(400));
-        self.frame(&[])
+        if self.link.protocol == Protocol::CompxKeyboard20 {
+            thread::sleep(Duration::from_millis(1500));
+            // The worker sends the chosen background next, then continues
+            // sending full volatile frames on its existing keepalive cadence.
+            Ok(())
+        } else {
+            thread::sleep(Duration::from_millis(400));
+            self.frame(&[])
+        }
     }
 
     pub fn frame(&self, cells: &[(u16, [u8; 3])]) -> Result<()> {
         let frame = live_frame(self.spec, cells)?;
+        if self.link.protocol == Protocol::CompxKeyboard20 {
+            let next: Vec<_> = self
+                .spec
+                .keys
+                .iter()
+                .map(|key| {
+                    let offset = key.off as usize;
+                    (
+                        key.off,
+                        [frame[offset], frame[offset + 1], frame[offset + 2]],
+                    )
+                })
+                .collect();
+            crate::compx_keyboard::stream(&self.link, &next)?;
+            return Ok(());
+        }
         self.link
             .feature_write(&sinowealth::packet(0x08, 0, frame.len(), &frame)?)
     }
 
     pub fn restore(&self, snapshot: &Snapshot) -> Result<()> {
         validate_snapshot(self.spec, snapshot)?;
+        if snapshot.receiver != (self.link.protocol == Protocol::CompxKeyboard20) {
+            return Err(DevError::Invalid("Reconnect the original USB/RF connection to restore the previous lighting. Configuration from another transport was refused.".into()));
+        }
         // Restore the captured mode configuration; saved per-key colours stay untouched.
         sinowealth::write_verified(&self.link, 0x04, &snapshot.config)
     }
 }
 
-pub fn recover(snapshot: &Snapshot) -> Result<()> {
+/// A pending snapshot belongs to one transport. Defer it without writing when
+/// the owner has switched connections; the worker retains it for later recovery.
+pub fn recover(snapshot: &Snapshot) -> Result<bool> {
     let lighting = Lighting::capture()?;
-    lighting.restore(snapshot)
+    validate_snapshot(lighting.spec, snapshot)?;
+    if snapshot.receiver != lighting.snapshot.receiver {
+        return Ok(false);
+    }
+    lighting.restore(snapshot)?;
+    Ok(true)
 }
 
 fn validate_snapshot(spec: &SinowealthSpec, snapshot: &Snapshot) -> Result<()> {
@@ -124,6 +162,7 @@ mod tests {
     fn recovery_requires_the_original_model_and_marker() {
         let mut snapshot = Snapshot {
             identity: spec().identity,
+            receiver: false,
             config: vec![0; 128],
         };
         assert!(validate_snapshot(spec(), &snapshot).is_err());

@@ -87,7 +87,7 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
         </div>
         <button type="button" className="btn" disabled={busy || !view?.active || !view.lit_keys.length}
           onClick={() => void action(clear, "Alerts cleared")}>{t("Clear alerts")}</button>
-        {!available && <p className="note">{t("Smart Notifications requires a supported keyboard connected by USB on Linux.")}</p>}
+        {!available && <p className="note">{t("Smart Notifications requires a supported keyboard connected by USB or RF on Linux.")}</p>}
         {!isTauri() && <p className="note">{t("Browser preview: notification capture and keyboard output are simulated.")}</p>}
         {(error || view?.error) && <p className="smart-error" role="alert">{t(error ?? view?.error ?? "")}</p>}
         {view?.status === "error" && <button className="btn" type="button" disabled={busy || !view}

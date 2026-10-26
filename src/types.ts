@@ -9,6 +9,7 @@ export type MouseMode = "2.4g" | "wired";
 
 export interface ListDevices {
   keyboard: boolean;
+  keyboard_mode?: MouseMode | null;
   keyboard_capabilities?: KeyboardCapabilities | null;
   mouse: boolean;
   mouse_mode: MouseMode | null;

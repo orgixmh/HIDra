@@ -344,5 +344,11 @@ export const ptBR = {
   "Automatic startup is currently available on Linux.": "A inicialização automática está disponível no Linux.",
   "Application path cannot be used for automatic startup": "O caminho do aplicativo não pode ser usado para inicialização automática",
   "Invalid startup directory": "Diretório de inicialização inválido",
-  "Done": "Concluído"
+  "Done": "Concluído",
+  "Smart Notifications requires a supported keyboard connected by USB or RF on Linux.": "O Smart Notifications exige um teclado compatível conectado por USB ou RF no Linux.",
+  "Connected through the RF receiver. Saved per-key colours require the USB cable; Smart Notifications controls individual keys over RF.": "Conectado pelo receptor RF. Cores por tecla salvas exigem o cabo USB; o Smart Notifications controla teclas individuais por RF.",
+  "Reconnect the original USB/RF connection to restore the previous lighting. Configuration from another transport was refused.": "Reconecte a conexão USB/RF original para restaurar a iluminação anterior. A configuração de outro transporte foi recusada.",
+  "Saved per-key colours over RF are not supported yet. Use the USB cable.": "Cores por tecla salvas por RF ainda não são compatíveis. Use o cabo USB.",
+  "RF keyboard did not reply. Wake it with a key press and retry.": "O teclado RF não respondeu. Pressione uma tecla para despertá-lo e tente novamente.",
+  "RF keyboard did not confirm the saved settings": "O teclado RF não confirmou as configurações salvas"
 } satisfies Record<keyof typeof en, string>;

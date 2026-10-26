@@ -342,5 +342,11 @@ export const en = {
   "Automatic startup is currently available on Linux.": "Automatic startup is currently available on Linux.",
   "Application path cannot be used for automatic startup": "Application path cannot be used for automatic startup",
   "Invalid startup directory": "Invalid startup directory",
-  "Done": "Done"
+  "Done": "Done",
+  "Smart Notifications requires a supported keyboard connected by USB or RF on Linux.": "Smart Notifications requires a supported keyboard connected by USB or RF on Linux.",
+  "Connected through the RF receiver. Saved per-key colours require the USB cable; Smart Notifications controls individual keys over RF.": "Connected through the RF receiver. Saved per-key colours require the USB cable; Smart Notifications controls individual keys over RF.",
+  "Reconnect the original USB/RF connection to restore the previous lighting. Configuration from another transport was refused.": "Reconnect the original USB/RF connection to restore the previous lighting. Configuration from another transport was refused.",
+  "Saved per-key colours over RF are not supported yet. Use the USB cable.": "Saved per-key colours over RF are not supported yet. Use the USB cable.",
+  "RF keyboard did not reply. Wake it with a key press and retry.": "RF keyboard did not reply. Wake it with a key press and retry.",
+  "RF keyboard did not confirm the saved settings": "RF keyboard did not confirm the saved settings"
 } as const;

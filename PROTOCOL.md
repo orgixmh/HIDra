@@ -296,3 +296,74 @@ uses (app ID, notification ID), but user dismissal has no standard GTK signal;
 manual clearing/fixed durations remain available. A public notification daemon
 restart ends monitoring with an explicit retry error rather than reusing stale IDs.
 No notification-centre history is imported or persisted.
+
+## K673SP-RGB-PRO 2.4 GHz receiver
+
+The OEM PRO-MAX KB.ini lists receiver `3554:FA09` alongside wired `258A:010C`.
+The local receiver exposes vendor usage FF02, usage 2, interface 1, input/output
+report 0x13 (20 bytes including ID). Its FF04 report 6 is a seven-byte status
+feature, not the wired 520-byte settings channel. The keyboard model is checked
+through command 05; the measured reply is
+`13 05 01 00 0a 03 00 00 00 00 ba 00 00 10 00 00 00 00 00 f0`.
+
+Read-only local queries on 2026-10-26 returned ten pages / 128 bytes for command
+44 and 35 pages / 490 bytes for command 49. The config has its own link fields
+(including byte 14) and ends in 5A A5. Never use a wired template or pad the RF
+palette to 512. All block writes preserve the block read from this transport,
+change requested lighting bytes only, then require exact read-back. Logical
+wired config 04 maps to RF 04, palette 0A maps to RF 09. Persistent per-key
+transfers have not been established and remain unavailable over RF.
+
+RF reports contain ID, command, total pages, page index, length, up to fourteen
+payload bytes and an eight-bit sum of bytes 0..18 at byte 19. Only command 88
+biases the length by 0x10. Its volatile payload groups RGB, key count and OEM
+matrix indices. W (slot 14) was confirmed to light blue with these packets.
+Read-only local diagnostics also observed missing entire replies and partial
+blocks (33 or 34 of 35 palette pages), even without any settings writes. Each
+query therefore gets at most ten attempts, with a fresh page set per attempt,
+a 1.5-second response window, and a 400ms idle limit after a partial response.
+Checksums, page consistency and exact block length remain mandatory. Verification also has a ten-attempt budget. An incomplete or missing read-back
+retries only the query. A complete read-back that differs from the requested
+lighting block allows resending that same full block, with exact read-back still
+required for success. Persistent pages are paced at 60ms and acknowledgements
+are drained between pages; verification starts after 250ms.
+This recovery runs only during requested device operations, not idle polling.
+
+Volatile messages are paced at 20ms per report. A full logical frame is encoded
+as colour groups in ONE command-88 message, fragmented into 14-byte HID chunks.
+There is no 80-key split: 81 equal-colour keys need 85 bytes / seven chunks.
+Oversized messages are rejected before any part is sent. The previous 84-byte
+split produced a final single-key message containing Right Ctrl on this layout;
+the owner observed whole-board flashes followed by only Right Ctrl remaining.
+Treating messages as replacement frames on this firmware is an inference from
+that observation, not an established fact about other Compx models. The
+owner confirmed that the single-message form lights the full keyboard, but
+intermittent simultaneous LED blanking remains unresolved. A subsequent 60-second
+passive USB capture while Smart was enabled contained 904 outgoing reports,
+all command 88, with no configuration queries or persistent writes. The owner
+did not observe the fault during that capture, so it does not establish its cause.
+RF remains Reported/experimental rather than fully Verified.
+
+RF Smart activation waits 1.5s for the mode transition, then the worker sends the
+complete current frame on its existing 350ms keepalive cadence, including an
+unchanged background. The earlier three-second startup resend window produced
+visible flashes and then stopped refreshing the unchanged colours. Full-frame
+keepalives address both that expiry and lost volatile packets. They use the
+existing handle and command 88 only: no discovery, reads or saved-setting writes
+occur on idle ticks. These timings and the keepalive change require physical
+verification; they do not establish a measured reset duration. Smart settings/exit
+waits allow the longer RF retry budget to finish before reporting a timeout.
+
+Snapshots now include a receiver flag (old snapshots default to wired). Recovery
+never replays a snapshot through the opposite transport, even for the same
+model. A pending snapshot from the other transport is saved separately as
+`smart-lighting-recovery-usb.json` or `smart-lighting-recovery-rf.json` before
+the active backup slot is reused. Recovery defers that copy until the original
+connection is available; it does not block Smart mode on the current connection.
+Existing conflicting copies are preserved and reported rather than overwritten.
+Startup checks both deferred files as well as the active recovery file. Disable
+Smart mode before changing connection type. No bootloader,
+firmware, remap, reset, or generic raw-command interfaces are exposed.
+
+Cross-checks: [receiver protocol notes](https://github.com/SibteProf/keylux/blob/main/docs/PROTOCOL.md)
+and [Compx paged read/write implementation](https://github.com/dnviti/aula-x99-pro-driver-linux/blob/master/aula_f99pro.py).

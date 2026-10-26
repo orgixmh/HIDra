@@ -58,6 +58,7 @@ export function Sidebar({
       model: devices.keyboard_model ?? t("Nenhum compatível"),
       vendor: devices.keyboard_vendor,
       connected: devices.keyboard,
+      mode: devices.keyboard_mode === "2.4g" ? "2.4G" : devices.keyboard_mode === "wired" ? t("Cabo") : undefined,
       untested: devices.keyboard_untested,
     },
   ];

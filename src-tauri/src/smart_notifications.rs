@@ -161,7 +161,7 @@ impl SmartNotifications {
             Err(error) => (Settings::default(), Some(error)),
         };
         let backup = directory.join("smart-lighting-recovery.json");
-        let resume = settings.enabled || backup.exists();
+        let resume = settings.enabled || recovery_paths(&backup).iter().any(|path| path.exists());
         *exclusive.lock() = resume;
         let view = Arc::new(Mutex::new(View {
             settings,
@@ -211,7 +211,7 @@ impl SmartNotifications {
         self.sender
             .send(Command::Save(settings, tx))
             .map_err(|_| "Notification worker stopped")?;
-        rx.recv_timeout(Duration::from_secs(12))
+        rx.recv_timeout(Duration::from_secs(180))
             .map_err(|_| "Notification settings timed out".to_string())?
     }
     pub fn test(&self, id: String) -> Result<View, String> {
@@ -233,7 +233,7 @@ impl SmartNotifications {
     pub fn shutdown(&self) {
         let (tx, rx) = mpsc::sync_channel(1);
         if self.sender.send(Command::Shutdown(tx)).is_ok() {
-            let _ = rx.recv_timeout(Duration::from_secs(8));
+            let _ = rx.recv_timeout(Duration::from_secs(180));
         }
     }
 }
@@ -282,10 +282,34 @@ impl Worker {
         });
     }
     fn recover(&self) -> Result<(), String> {
-        if let Some(snapshot) = read_json::<Snapshot>(&self.backup)? {
+        for path in recovery_paths(&self.backup) {
+            let Some(snapshot) = read_json::<Snapshot>(&path)? else {
+                continue;
+            };
             *self.exclusive.lock() = true;
-            notification_lighting::recover(&snapshot).map_err(|e| e.to_string())?;
-            remove_backup(&self.backup)?;
+            if notification_lighting::recover(&snapshot).map_err(|e| e.to_string())? {
+                remove_backup(&path)?;
+            } else if path == self.backup {
+                // Preserve the original block durably before freeing the active
+                // backup slot for the currently connected transport.
+                let deferred = self.backup.with_file_name(if snapshot.receiver {
+                    "smart-lighting-recovery-rf.json"
+                } else {
+                    "smart-lighting-recovery-usb.json"
+                });
+                if let Some(existing) = read_json::<Snapshot>(&deferred)? {
+                    if existing != snapshot {
+                        return Err(
+                            "Conflicting lighting recovery snapshots; both copies were preserved"
+                                .into(),
+                        );
+                    }
+                } else {
+                    atomic_json(&deferred, &snapshot)?;
+                }
+                remove_backup(&path)?;
+                log::info!("Deferred lighting recovery until its original connection is available");
+            }
         }
         Ok(())
     }
@@ -742,6 +766,14 @@ fn validate(settings: &Settings) -> Result<(), String> {
         }
     }
     Ok(())
+}
+
+fn recovery_paths(active: &Path) -> [PathBuf; 3] {
+    [
+        active.to_path_buf(),
+        active.with_file_name("smart-lighting-recovery-usb.json"),
+        active.with_file_name("smart-lighting-recovery-rf.json"),
+    ]
 }
 
 fn remove_backup(path: &Path) -> Result<(), String> {

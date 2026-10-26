@@ -10,6 +10,7 @@ use std::{thread, time::Duration};
 
 const REPORT_LEN: usize = 520;
 const CONFIG_LEN: usize = 128;
+#[cfg(test)]
 const PALETTE_LEN: usize = 512;
 const CUSTOM_LEN: usize = 384;
 const PLANE_LEN: usize = 126;
@@ -43,6 +44,9 @@ fn decode_reply<'a>(request: &[u8; REPORT_LEN], reply: &'a [u8]) -> Result<&'a [
 }
 
 pub(crate) fn read(link: &Link, command: u8, arg: u8, len: usize) -> Result<Vec<u8>> {
+    if link.protocol == Protocol::CompxKeyboard20 {
+        return crate::compx_keyboard::read(link, command, arg, len);
+    }
     let request = packet(command, arg, len, &[])?;
     let mut last = invalid("keyboard did not reply");
     for _ in 0..4 {
@@ -61,6 +65,9 @@ pub(crate) fn read(link: &Link, command: u8, arg: u8, len: usize) -> Result<Vec<
 }
 
 pub(crate) fn write_verified(link: &Link, command: u8, data: &[u8]) -> Result<()> {
+    if link.protocol == Protocol::CompxKeyboard20 {
+        return crate::compx_keyboard::write_verified(link, command, data);
+    }
     // Only configuration registers. No arbitrary command or firmware interface.
     if !matches!(command, 0x04 | 0x0a | 0x06) {
         return Err(invalid("unsupported write"));
@@ -81,7 +88,10 @@ pub(crate) fn write_verified(link: &Link, command: u8, data: &[u8]) -> Result<()
 
 pub(crate) fn open(api: &HidApi) -> Result<(Link, &'static SinowealthSpec)> {
     let found = hid::find(api, Kind::Keyboard).ok_or(DevError::NotFound)?;
-    if found.device.protocol != Protocol::Sinowealth520 {
+    if !matches!(
+        found.device.protocol,
+        Protocol::Sinowealth520 | Protocol::CompxKeyboard20
+    ) {
         return Err(DevError::Unsupported(found.full_name()));
     }
     let spec = found
@@ -156,7 +166,7 @@ pub fn effects(spec: &SinowealthSpec) -> Vec<Effect> {
 pub fn read_state(api: &HidApi) -> Result<KbState> {
     let (link, spec) = open(api)?;
     let config = read(&link, 0x84, 0, CONFIG_LEN)?;
-    let palette = read(&link, 0x8a, 0, PALETTE_LEN)?;
+    let palette = read(&link, 0x8a, 0, spec.palette_len)?;
     let effect = config[10];
     let meta = spec.effects.iter().find(|e| e.id == effect);
     let entry = meta.map(|e| e.config_offset);
@@ -194,7 +204,10 @@ fn update_lighting(
     if brightness > spec.brightness_max || speed > spec.speed_max {
         return Err(invalid("lighting value outside the model's range"));
     }
-    if config.len() != CONFIG_LEN || config[126..] != [0x5a, 0xa5] || palette.len() != PALETTE_LEN {
+    if config.len() != CONFIG_LEN
+        || config[126..] != [0x5a, 0xa5]
+        || palette.len() != spec.palette_len
+    {
         return Err(invalid("invalid lighting snapshot"));
     }
     let meta = if effect == 0 || effect == 21 {
@@ -239,7 +252,7 @@ pub fn set_effect(
 ) -> Result<()> {
     let (link, spec) = open(api)?;
     let mut config = read(&link, 0x84, 0, CONFIG_LEN)?;
-    let mut palette = read(&link, 0x8a, 0, PALETTE_LEN)?;
+    let mut palette = read(&link, 0x8a, 0, spec.palette_len)?;
     let old_config = config.clone();
     let old_palette = palette.clone();
     let change_palette = update_lighting(

@@ -42,7 +42,8 @@ Cores por tecla, pintadas uma a uma e gravadas no próprio teclado:
 | Redragon Cobra Pro (M711-PRO) — receptor 2.4 GHz | `25A7:FA07` | ✅ validado | iluminação, DPI, botões, polling |
 | Redragon Cobra Pro (M711-PRO) — cabo | `25A7:FA08` | ✅ validado | iluminação, DPI, botões, polling |
 | Redragon Brahma Pro (K586RGB-PRO) | `0C45:5004` | ✅ validado | 18 efeitos + cor por tecla, 3 perfis, remapeamento |
-| Redragon UCAL K673SP-RGB-PRO | `258A:010C` | ✅ validado | iluminação via cabo, 18 efeitos + cor por tecla (modelo verificado); sem remapeamento/perfis |
+| Redragon UCAL K673SP-RGB-PRO — cabo | `258A:010C` | ✅ validado | iluminação via cabo, 18 efeitos + cor por tecla (modelo verificado); sem remapeamento/perfis |
+| Redragon UCAL K673SP-RGB-PRO — receptor 2.4 GHz | `3554:FA09` | 🟡 relatado | iluminação 2.4 GHz + Smart Notifications (modelo verificado); cores por tecla salvas exigem USB |
 <!-- devices:end -->
 
 **Seu aparelho não está aí?** O HIDra não é um projeto Redragon — ele começou
@@ -127,6 +128,18 @@ Se a sessão bloquear o monitoramento, o painel apresenta um erro. Quadros RGB
 temporários usam uma conexão HID aberta; o quadro de fundo ocioso exige atualização
 periódica, sem redescoberta nem leitura repetida da configuração. Outros dispositivos
 e plataformas ainda não oferecem este modo.
+
+O UCAL K673SP-RGB-PRO também possui um receptor **2,4 GHz** separado (`3554:FA09`).
+O HIDra verifica a identidade completa e usa o protocolo próprio de relatórios de
+saída; apenas adicionar esse ID ao transporte com cabo não funciona. O Smart
+Notifications transmite quadros completos por RF, com atualização periódica do
+fundo. A edição
+de cores por tecla salvas ainda exige o cabo. A recuperação de iluminação por
+cabo e por receptor não pode usar o outro transporte. Desative o Smart Notifications
+antes de alternar entre cabo e RF. Pressione uma tecla para despertar o teclado
+e use Atualizar dispositivos se necessário.
+O suporte RF permanece experimental: apagamentos simultâneos e intermitentes
+dos LEDs foram relatados e continuam em investigação.
 
 ### Configurações e inicialização automática
 

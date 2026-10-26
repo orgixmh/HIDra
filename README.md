@@ -49,7 +49,8 @@ Per-key colours, painted key by key and stored on the keyboard itself:
 | Redragon Cobra Pro (M711-PRO) — 2.4 GHz receiver | `25A7:FA07` | ✅ verified | lighting, DPI, buttons, polling |
 | Redragon Cobra Pro (M711-PRO) — cable | `25A7:FA08` | ✅ verified | lighting, DPI, buttons, polling |
 | Redragon Brahma Pro (K586RGB-PRO) | `0C45:5004` | ✅ verified | 18 effects + per-key colour, 3 profiles, key remap |
-| Redragon UCAL K673SP-RGB-PRO | `258A:010C` | ✅ verified | wired lighting, 18 effects + per-key colour (model identity checked); no remap/profiles |
+| Redragon UCAL K673SP-RGB-PRO — cable | `258A:010C` | ✅ verified | wired lighting, 18 effects + per-key colour (model identity checked); no remap/profiles |
+| Redragon UCAL K673SP-RGB-PRO — 2.4 GHz receiver | `3554:FA09` | 🟡 reported | 2.4 GHz lighting + Smart Notifications (model identity checked); saved per-key colours require USB |
 <!-- devices:end -->
 
 **Your device is not here?** HIDra is not a Redragon project — it started with
@@ -135,6 +136,17 @@ an error. Smart mode uses temporary RGB frames and keeps one HID handle open;
 its idle background frame needs periodic refreshes, without repeated device discovery
 or configuration reads. Other devices/platforms currently show this mode as
 unsupported.
+
+The UCAL K673SP-RGB-PRO also has a distinct **2.4 GHz** receiver (`3554:FA09`).
+HIDra checks its full model identity and uses its own output-report protocol;
+adding that ID to the wired transport would not work. Smart Notifications streams
+key colours over RF as complete frames, including periodic background refreshes.
+Saved per-key colour editing still requires the cable. Wired and receiver mode
+recovery snapshots cannot be restored through the other transport. Turn Smart
+Notifications off before switching between cable and RF. Wake a sleeping wireless
+keyboard with a key press and use Refresh devices if needed.
+RF support remains experimental: intermittent simultaneous LED blanking has
+been reported and is still under investigation.
 
 ### Settings and login startup
 

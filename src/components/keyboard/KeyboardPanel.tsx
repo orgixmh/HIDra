@@ -74,7 +74,8 @@ export function KeyboardPanel({
           {t("Teclado não detectado. Conecte o cabo para aplicar alterações — os controles abaixo continuam editáveis.")}</p>
       )}
 
-      {capabilities?.remap === false && <p className="note">{t("Lighting and per-key colours are available over USB. Key remapping and profile switching are not supported yet.")}</p>}
+      {capabilities?.remap === false && capabilities?.per_key !== false && <p className="note">{t("Lighting and per-key colours are available over USB. Key remapping and profile switching are not supported yet.")}</p>}
+      {capabilities?.per_key === false && <p className="note">{t("Connected through the RF receiver. Saved per-key colours require the USB cable; Smart Notifications controls individual keys over RF.")}</p>}
       <div className="workspace__body">
         {active === "smart" ? <SmartNotifications controller={smart}
           layout={capabilities?.layout ?? undefined} aspect={capabilities?.layout_aspect ?? undefined}

@@ -32,6 +32,8 @@ pub enum Protocol {
     Sonix64,
     /// 520-byte feature reports on ID 6, implemented in sinowealth.rs.
     Sinowealth520,
+    /// Compx keyboard receiver: 20-byte output/input reports on ID 0x13.
+    CompxKeyboard20,
 }
 
 /// How the device is attached — shown next to its name in the sidebar.
@@ -152,6 +154,20 @@ pub const SUPPORTED: &[Device] = &[
         support: Support::Verified,
         sinowealth: Some(&K673SP),
     },
+    Device {
+        vendor: "Redragon",
+        model: "UCAL K673SP-RGB-PRO",
+        vid: 0x3554,
+        pid: 0xfa09,
+        kind: Kind::Keyboard,
+        protocol: Protocol::CompxKeyboard20,
+        interface: 1,
+        config_usage_page: 0xff02,
+        reply_usage_page: 0xff02,
+        connection: Connection::Receiver,
+        support: Support::Reported,
+        sinowealth: Some(&K673SP_RF),
+    },
 ];
 
 /// Every supported device of a kind, in table order.
@@ -163,6 +179,7 @@ pub fn of_kind(kind: Kind) -> impl Iterator<Item = &'static Device> {
 #[derive(Debug)]
 pub struct SinowealthSpec {
     pub identity: [u8; 6],
+    pub palette_len: usize,
     /// Mode changes required before volatile RGB streaming (offset, value).
     pub stream_config: &'static [(usize, u8)],
     pub aspect: f32,
@@ -196,6 +213,7 @@ pub struct KeyboardKey {
 // User's K673SP replies to model query 0x82 with this complete six-byte ID.
 const K673SP: SinowealthSpec = SinowealthSpec {
     identity: [3, 0, 0, 0, 0, 0xba],
+    palette_len: 512,
     stream_config: &[(9, 1), (10, 21), (59, 0x47)],
     aspect: 2.615,
     brightness_max: 4,
@@ -204,25 +222,145 @@ const K673SP: SinowealthSpec = SinowealthSpec {
     keys: &K673SP_KEYS,
 };
 #[rustfmt::skip]
+// Identity/config/palette lengths confirmed by read-only RF queries on K673SP.
+const K673SP_RF: SinowealthSpec = SinowealthSpec {
+    identity: [3, 0, 0, 0, 0, 0xba],
+    palette_len: 490,
+    stream_config: &[(9, 1), (10, 21), (59, 0x47)],
+    aspect: 2.615,
+    brightness_max: 4,
+    speed_max: 4,
+    effects: &K673SP_EFFECTS,
+    keys: &K673SP_KEYS,
+};
+
 const K673SP_EFFECTS: [SinowealthEffect; 18] = [
-    SinowealthEffect { id: 1, name: "Fixed on", color: true, speed: false, config_offset: 58 },
-    SinowealthEffect { id: 2, name: "Respire", color: true, speed: true, config_offset: 60 },
-    SinowealthEffect { id: 3, name: "Rainbow", color: false, speed: true, config_offset: 62 },
-    SinowealthEffect { id: 4, name: "Flash away", color: true, speed: true, config_offset: 64 },
-    SinowealthEffect { id: 5, name: "Raindrops", color: true, speed: true, config_offset: 66 },
-    SinowealthEffect { id: 6, name: "Rainbow wheel", color: true, speed: true, config_offset: 68 },
-    SinowealthEffect { id: 7, name: "Ripples shining", color: true, speed: true, config_offset: 70 },
-    SinowealthEffect { id: 8, name: "Stars twinkle", color: true, speed: true, config_offset: 72 },
-    SinowealthEffect { id: 9, name: "Shadow disappear", color: true, speed: true, config_offset: 74 },
-    SinowealthEffect { id: 10, name: "Retro snake", color: true, speed: true, config_offset: 76 },
-    SinowealthEffect { id: 11, name: "Neon stream", color: true, speed: true, config_offset: 78 },
-    SinowealthEffect { id: 12, name: "Reaction", color: true, speed: true, config_offset: 80 },
-    SinowealthEffect { id: 13, name: "Sine wave", color: true, speed: true, config_offset: 82 },
-    SinowealthEffect { id: 14, name: "Retinue scanning", color: true, speed: true, config_offset: 84 },
-    SinowealthEffect { id: 15, name: "Rotating windmill", color: false, speed: true, config_offset: 86 },
-    SinowealthEffect { id: 16, name: "Colorful waterfall", color: false, speed: true, config_offset: 88 },
-    SinowealthEffect { id: 17, name: "Blossoming", color: false, speed: true, config_offset: 90 },
-    SinowealthEffect { id: 18, name: "Rotating storm", color: true, speed: true, config_offset: 92 },
+    SinowealthEffect {
+        id: 1,
+        name: "Fixed on",
+        color: true,
+        speed: false,
+        config_offset: 58,
+    },
+    SinowealthEffect {
+        id: 2,
+        name: "Respire",
+        color: true,
+        speed: true,
+        config_offset: 60,
+    },
+    SinowealthEffect {
+        id: 3,
+        name: "Rainbow",
+        color: false,
+        speed: true,
+        config_offset: 62,
+    },
+    SinowealthEffect {
+        id: 4,
+        name: "Flash away",
+        color: true,
+        speed: true,
+        config_offset: 64,
+    },
+    SinowealthEffect {
+        id: 5,
+        name: "Raindrops",
+        color: true,
+        speed: true,
+        config_offset: 66,
+    },
+    SinowealthEffect {
+        id: 6,
+        name: "Rainbow wheel",
+        color: true,
+        speed: true,
+        config_offset: 68,
+    },
+    SinowealthEffect {
+        id: 7,
+        name: "Ripples shining",
+        color: true,
+        speed: true,
+        config_offset: 70,
+    },
+    SinowealthEffect {
+        id: 8,
+        name: "Stars twinkle",
+        color: true,
+        speed: true,
+        config_offset: 72,
+    },
+    SinowealthEffect {
+        id: 9,
+        name: "Shadow disappear",
+        color: true,
+        speed: true,
+        config_offset: 74,
+    },
+    SinowealthEffect {
+        id: 10,
+        name: "Retro snake",
+        color: true,
+        speed: true,
+        config_offset: 76,
+    },
+    SinowealthEffect {
+        id: 11,
+        name: "Neon stream",
+        color: true,
+        speed: true,
+        config_offset: 78,
+    },
+    SinowealthEffect {
+        id: 12,
+        name: "Reaction",
+        color: true,
+        speed: true,
+        config_offset: 80,
+    },
+    SinowealthEffect {
+        id: 13,
+        name: "Sine wave",
+        color: true,
+        speed: true,
+        config_offset: 82,
+    },
+    SinowealthEffect {
+        id: 14,
+        name: "Retinue scanning",
+        color: true,
+        speed: true,
+        config_offset: 84,
+    },
+    SinowealthEffect {
+        id: 15,
+        name: "Rotating windmill",
+        color: false,
+        speed: true,
+        config_offset: 86,
+    },
+    SinowealthEffect {
+        id: 16,
+        name: "Colorful waterfall",
+        color: false,
+        speed: true,
+        config_offset: 88,
+    },
+    SinowealthEffect {
+        id: 17,
+        name: "Blossoming",
+        color: false,
+        speed: true,
+        config_offset: 90,
+    },
+    SinowealthEffect {
+        id: 18,
+        name: "Rotating storm",
+        color: true,
+        speed: true,
+        config_offset: 92,
+    },
 ];
 #[rustfmt::skip]
 const K673SP_KEYS: [KeyboardKey; 81] = [
