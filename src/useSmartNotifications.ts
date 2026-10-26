@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { listen } from "@tauri-apps/api/event";
 import { callBackend, isTauri } from "./backend";
-import type { SmartSettings, SmartView } from "./types";
+import type { Rgb, SmartSettings, SmartView } from "./types";
 
 export function useSmartNotifications() {
   const [view, setView] = useState<SmartView | null>(null);
@@ -31,6 +31,10 @@ export function useSmartNotifications() {
     const next = await callBackend<SmartView>("smart_notifications_save", { settings });
     setView(next); setError(null); return next;
   }, []);
+  const setBackground = useCallback(async (color: Rgb) => {
+    const next = await callBackend<SmartView>("smart_notifications_background", { color });
+    setView(next); setError(null); return next;
+  }, []);
   const test = useCallback(async (id: string) => {
     const next = await callBackend<SmartView>("smart_notifications_test", { id });
     setView(next); return next;
@@ -39,6 +43,6 @@ export function useSmartNotifications() {
     const next = await callBackend<SmartView>("smart_notifications_clear");
     setView(next); return next;
   }, []);
-  return { view, error, save, test, clear };
+  return { view, error, save, test, clear, setBackground };
 }
 export type SmartController = ReturnType<typeof useSmartNotifications>;

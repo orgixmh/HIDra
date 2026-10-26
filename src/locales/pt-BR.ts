@@ -350,5 +350,13 @@ export const ptBR = {
   "Reconnect the original USB/RF connection to restore the previous lighting. Configuration from another transport was refused.": "Reconecte a conexão USB/RF original para restaurar a iluminação anterior. A configuração de outro transporte foi recusada.",
   "Saved per-key colours over RF are not supported yet. Use the USB cable.": "Cores por tecla salvas por RF ainda não são compatíveis. Use o cabo USB.",
   "RF keyboard did not reply. Wake it with a key press and retry.": "O teclado RF não respondeu. Pressione uma tecla para despertá-lo e tente novamente.",
-  "RF keyboard did not confirm the saved settings": "O teclado RF não confirmou as configurações salvas"
+  "RF keyboard did not confirm the saved settings": "O teclado RF não confirmou as configurações salvas",
+  "LIGHTING": "ILUMINAÇÃO",
+  "PER KEY": "POR TECLA",
+  "SMART": "SMART",
+  "Keyboard features": "Recursos do teclado",
+  "Available": "Disponível",
+  "Unavailable": "Indisponível",
+  "Rule settings": "Configurações da regra",
+  "All keys use this colour between alerts. Applied immediately while Smart Notifications is on.": "Todas as teclas usam esta cor entre alertas. Aplicada imediatamente enquanto o Smart Notifications está ligado."
 } satisfies Record<keyof typeof en, string>;

@@ -128,6 +128,7 @@ pub struct View {
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 pub(crate) enum Command {
     Save(Settings, SyncSender<Result<View, String>>),
+    Background([u8; 3], SyncSender<Result<View, String>>),
     Notification(DesktopNotification, NotificationId),
     Closed(NotificationId),
     Clear(SyncSender<Result<View, String>>),
@@ -213,6 +214,14 @@ impl SmartNotifications {
             .map_err(|_| "Notification worker stopped")?;
         rx.recv_timeout(Duration::from_secs(180))
             .map_err(|_| "Notification settings timed out".to_string())?
+    }
+    pub fn background(&self, color: [u8; 3]) -> Result<View, String> {
+        let (tx, rx) = mpsc::sync_channel(1);
+        self.sender
+            .send(Command::Background(color, tx))
+            .map_err(|_| "Notification worker stopped")?;
+        rx.recv_timeout(Duration::from_secs(180))
+            .map_err(|_| "Notification background update timed out".to_string())?
     }
     pub fn test(&self, id: String) -> Result<View, String> {
         let (tx, rx) = mpsc::sync_channel(1);
@@ -378,6 +387,17 @@ impl Worker {
         self.publish();
         Ok(self.view.lock().clone())
     }
+    fn background(&mut self, color: [u8; 3]) -> Result<View, String> {
+        let mut settings = self.view.lock().settings.clone();
+        settings.background = color;
+        atomic_json(&self.path, &settings)?;
+        self.view.lock().settings.background = color;
+        // A background edit must preserve current alerts, script runners and
+        // lighting ownership. Only the next volatile frame needs to change.
+        self.light()?;
+        self.publish();
+        Ok(self.view.lock().clone())
+    }
     fn start_scripts(&mut self) {
         self.scripts.take();
         self.generation = self.generation.wrapping_add(1);
@@ -530,6 +550,14 @@ impl Worker {
             match message {
                 Ok(Command::Save(settings, reply)) => {
                     let result = self.configure(settings);
+                    if let Err(error) = &result {
+                        self.fail(error.clone());
+                        self.publish();
+                    }
+                    let _ = reply.send(result);
+                }
+                Ok(Command::Background(color, reply)) => {
+                    let result = self.background(color);
                     if let Err(error) = &result {
                         self.fail(error.clone());
                         self.publish();

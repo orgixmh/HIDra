@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { isTauri } from "../../backend";
 import { useTranslation } from "../../i18n";
 import { KEYBOARD_ASPECT, KEYBOARD_LAYOUT } from "../../keyboardLayout";
@@ -22,11 +22,22 @@ interface Props {
 export function SmartNotifications({ controller, layout, aspect, supported, present }: Props) {
   const { t } = useTranslation();
   const notify = useToast();
-  const { view, error, save, test, clear } = controller;
+  const { view, error, save, test, clear, setBackground: applyBackground } = controller;
   const [rules, setRules] = useState<NotificationRule[]>([]);
   const [background, setBackground] = useState<Rgb>([24, 24, 32]);
+  const pendingBackground = useRef<Rgb | null>(null);
+  const sendingBackground = useRef(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [recentOpen, setRecentOpen] = useState(false);
+  const recentDialog = useRef<HTMLDialogElement>(null);
+  const recentId = useId();
+  const recentTitle = useId();
+  const recentDescription = useId();
+  useEffect(() => {
+    if (recentOpen && recentDialog.current && !recentDialog.current.open) recentDialog.current.showModal();
+    else if (!recentOpen && recentDialog.current?.open) recentDialog.current.close();
+  }, [recentOpen]);
   const saved = JSON.stringify(view?.settings.rules ?? []);
   useEffect(() => {
     const next = JSON.parse(saved) as NotificationRule[];
@@ -34,10 +45,35 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
     setSelected((id) => next.some((rule) => rule.id === id) ? id : next[0]?.id ?? null);
   }, [saved]);
   const savedBackground = JSON.stringify(view?.settings.background ?? [24, 24, 32]);
-  useEffect(() => { setBackground(JSON.parse(savedBackground) as Rgb); }, [savedBackground]);
+  useEffect(() => {
+    if (!sendingBackground.current) setBackground(JSON.parse(savedBackground) as Rgb);
+  }, [savedBackground]);
   const keys = layout ?? KEYBOARD_LAYOUT;
   const draft = rules.find((rule) => rule.id === selected);
   const enabled = view?.settings.enabled ?? false;
+  const changeBackground = (color: Rgb) => {
+    setBackground(color);
+    if (!enabled) return;
+    pendingBackground.current = color;
+    if (sendingBackground.current) return;
+    sendingBackground.current = true;
+    // Keep only the latest drag position while a frame is being transmitted.
+    // Requests stay ordered without queuing every intermediate colour.
+    void (async () => {
+      try {
+        while (pendingBackground.current) {
+          const next = pendingBackground.current;
+          pendingBackground.current = null;
+          await applyBackground(next);
+        }
+      } catch (err) {
+        pendingBackground.current = null;
+        notify(String(err), "error");
+      } finally {
+        sendingBackground.current = false;
+      }
+    })();
+  };
   const source = draft?.source === "script" ? "script" : draft?.app.trim() === "" && draft?.text.trim().toLowerCase() === "mail.google.com" ? "gmail" : "custom";
   const dirty = JSON.stringify(rules) !== saved || JSON.stringify(background) !== savedBackground;
   const valid = rules.length <= 64 && rules.every((rule) => rule.name.trim() &&
@@ -77,16 +113,20 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
         actions={<Toggle checked={enabled} onChange={toggle} disabled={busy || !view || (!enabled && (!available || !valid))}
           label={enabled ? t("Ligado") : t("Desligado")} />}>
         <p className="note">{t("Smart Notifications replaces normal lighting effects with a solid background and notification colours. Turning it off restores your previous lighting.")}</p>
-        <Field label={t("Background colour")} hint={t("All keys use this colour between alerts. Save rules to apply your background.")}>
-          <ColorPicker value={background} onChange={setBackground} />
+        <Field label={t("Background colour")} hint={t("All keys use this colour between alerts. Applied immediately while Smart Notifications is on.")}>
+          <ColorPicker value={background} onChange={changeBackground} />
         </Field>
         <div className="smart-status" role="status">
           <span className={`led${view?.status === "listening" ? " led--on" : ""}`} />
           {t(view?.status === "listening" ? "Listening for desktop notifications" : view?.status === "starting" ? "Starting Smart Notifications…" : enabled ? "Notification listener needs attention" : "Smart Notifications is off")}
           {dirty && <span className="chip chip--muted">{t("Unsaved changes")}</span>}
         </div>
+        <div className="smart-recent-toolbar">
         <button type="button" className="btn" disabled={busy || !view?.active || !view.lit_keys.length}
           onClick={() => void action(clear, "Alerts cleared")}>{t("Clear alerts")}</button>
+          <button type="button" className="btn" aria-haspopup="dialog" aria-expanded={recentOpen}
+            aria-controls={recentId} onClick={() => setRecentOpen(true)}>{t("Recent notifications")}</button>
+        </div>
         {!available && <p className="note">{t("Smart Notifications requires a supported keyboard connected by USB or RF on Linux.")}</p>}
         {!isTauri() && <p className="note">{t("Browser preview: notification capture and keyboard output are simulated.")}</p>}
         {(error || view?.error) && <p className="smart-error" role="alert">{t(error ?? view?.error ?? "")}</p>}
@@ -106,6 +146,31 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
             </button>)}
             {!rules.length && <p className="note">{t("Add your first rule to assign notifications to keys.")}</p>}
           </div>
+          <div className="smart-save">
+            <button className="btn btn--primary" type="button" disabled={busy || !view || !valid || !dirty}
+              onClick={() => void action(() => save({ enabled, rules, background }), "Notification rules saved")}>{t("Save rules")}</button>
+            {!valid && <p className="note">{t("Each rule needs a name, a notification filter or script path, at least one key and a valid duration / interval.")}</p>}
+          </div>
+        </Panel>
+
+        <Panel title={draft?.name || t("Rule settings")} subtitle={draft ? t("Choose keys for {name}", { name: draft.name }) : t("Select or add a rule first.")}>
+          {draft && <>
+          <div className="smart-keyboard-frame">
+          <div className="kbd-stage smart-keyboard" style={{ aspectRatio: String(aspect ?? KEYBOARD_ASPECT) }}>
+            {keys.map((key) => {
+              const selectedKey = draft?.keys.includes(key.off) ?? false;
+              return <button type="button" key={key.off} className={`kbd-key${selectedKey ? " kbd-key--lit smart-key--selected" : ""}`}
+                aria-pressed={selectedKey} disabled={!draft || busy} title={t(key.label)}
+                style={{ left: `${key.x}%`, top: `${key.y}%`, width: `${key.w}%`, height: `${key.h}%`, background: rgbCss(selectedKey ? draft.color : background) }}
+                onClick={() => draft && update({ keys: selectedKey ? draft.keys.filter((off) => off !== key.off) : [...draft.keys, key.off] })}>
+                <span>{t(key.label)}</span>
+              </button>;
+            })}
+          </div>
+          </div>
+          <p className="note">{selectedNames.length ? t("Assigned keys: {keys}", { keys: selectedNames.join(", ") }) : t("Click keys to select or remove them from this rule.")}</p>
+          <p className="note">{t("Keys return to the background colour after alerts. When rules overlap, the newest alert takes priority.")}</p>
+          </>}
           {draft && <div className="smart-editor">
             <Field label={t("Rule name")}><input className="input" maxLength={100} value={draft.name} onChange={(event) => update({ name: event.target.value })} /></Field>
             <Toggle checked={draft.enabled} onChange={(on) => update({ enabled: on })} label={t("Rule enabled")} />
@@ -146,7 +211,7 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
             <p className="note">{t("Matching ignores letter case. If both filters are filled in, both must match.")}</p>
             </>}
             <Field label={t("Alert colour")}><ColorPicker value={draft.color} onChange={(color) => update({ color })} /></Field>
-            <Field label={t("Keep alert active")} hint={t(source === "script" ? "The default keeps the key active until the script returns 0." : "Dismissed means removed from desktop notifications, not read inside the app. Some apps do not report dismissals; use Clear alerts if needed.")}>
+            <Field label={t("Keep alert active")} hint={source === "script" ? t("The default keeps the key active until the script returns 0.") : undefined}>
               <select className="input" value={draft.duration_seconds} onChange={(event) => update({ duration_seconds: Number(event.target.value) })}>
                 <option value={0}>{t(source === "script" ? "Until script returns 0" : "Until notification is dismissed")}</option>
                 <option value={60}>{t("1 minute")}</option>
@@ -155,40 +220,26 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
               </select>
             </Field>
             <Toggle checked={draft.blinking} onChange={(blinking) => update({ blinking })} label={t("Blink notification keys")} />
-            <p className="note">{t("Test rule runs for 10 seconds. Real notifications follow the selected duration.")}</p>
             <div className="btnrow">
               <button className="btn" type="button" disabled={busy} onClick={remove}>{t("Delete rule")}</button>
               <button className="btn" type="button" disabled={busy || dirty || !enabled || !view?.active}
                 onClick={() => void action(() => test(draft.id), "Test notification sent")}>{t("Test rule")}</button>
             </div>
           </div>}
-          <div className="smart-save">
-            <button className="btn btn--primary" type="button" disabled={busy || !view || !valid || !dirty}
-              onClick={() => void action(() => save({ enabled, rules, background }), "Notification rules saved")}>{t("Save rules")}</button>
-            {!valid && <p className="note">{t("Each rule needs a name, a notification filter or script path, at least one key and a valid duration / interval.")}</p>}
-          </div>
-        </Panel>
-
-        <Panel title={t("Keyboard assignment")} subtitle={draft ? t("Choose keys for {name}", { name: draft.name }) : t("Select or add a rule first.")}>
-          <div className="kbd-stage smart-keyboard" style={{ aspectRatio: String(aspect ?? KEYBOARD_ASPECT) }}>
-            {keys.map((key) => {
-              const selectedKey = draft?.keys.includes(key.off) ?? false;
-              const owner = rules.find((rule) => rule.enabled && rule.keys.includes(key.off));
-              const lit = view?.lit_keys.includes(key.off) ?? false;
-              return <button type="button" key={key.off} className={`kbd-key${owner ? " kbd-key--lit" : ""}${selectedKey ? " smart-key--selected" : ""}${lit ? " smart-key--live" : ""}`}
-                aria-pressed={selectedKey} disabled={!draft || busy} title={t(key.label)}
-                style={{ left: `${key.x}%`, top: `${key.y}%`, width: `${key.w}%`, height: `${key.h}%`, background: rgbCss(owner?.color ?? background) }}
-                onClick={() => draft && update({ keys: selectedKey ? draft.keys.filter((off) => off !== key.off) : [...draft.keys, key.off] })}>
-                <span>{t(key.label)}</span>
-              </button>;
-            })}
-          </div>
-          <p className="note">{selectedNames.length ? t("Assigned keys: {keys}", { keys: selectedNames.join(", ") }) : t("Click keys to select or remove them from this rule.")}</p>
-          <p className="note">{t("Keys return to the background colour after alerts. When rules overlap, the newest alert takes priority.")}</p>
         </Panel>
       </div>
 
-      <Panel title={t("Recent notifications")} subtitle={t("Only kept in memory while HIDra is open. Use these details to build a matching rule.")}>
+      <dialog className="close-dialog smart-recent-dialog" ref={recentDialog} id={recentId}
+        aria-labelledby={recentTitle} aria-describedby={recentDescription} onClose={() => setRecentOpen(false)}>
+        <header className="smart-recent-dialog__header">
+          <div>
+            <h2 id={recentTitle}>{t("Recent notifications")}</h2>
+            <p className="note" id={recentDescription}>{t("Only kept in memory while HIDra is open. Use these details to build a matching rule.")}</p>
+            {draft && <span className="chip chip--muted">{draft.name}</span>}
+          </div>
+          <button type="button" className="btn" onClick={() => setRecentOpen(false)}>{t("Fechar")}</button>
+        </header>
+        <div className="smart-recent-dialog__content">
         {!view?.recent.length && <p className="note">{t("Turn on Smart Notifications, then send a notification from an app or website.")}</p>}
         <div className="smart-recent">
           {view?.recent.map((event, index) => <div className="smart-recent-row" key={`${index}:${event.app}:${event.title}`}>
@@ -201,7 +252,9 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
             </div>
           </div>)}
         </div>
-      </Panel>
+
+        </div>
+      </dialog>
     </div>
   );
 }

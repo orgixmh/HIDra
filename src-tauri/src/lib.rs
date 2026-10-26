@@ -64,6 +64,14 @@ fn smart_notifications_save(
 }
 
 #[tauri::command]
+fn smart_notifications_background(
+    smart: State<smart_notifications::SmartNotifications>,
+    color: [u8; 3],
+) -> std::result::Result<smart_notifications::View, String> {
+    smart.background(color)
+}
+
+#[tauri::command]
 fn smart_notifications_test(
     smart: State<smart_notifications::SmartNotifications>,
     id: String,
@@ -349,6 +357,7 @@ pub fn run() {
             desktop_lifecycle_close,
             smart_notifications_get,
             smart_notifications_save,
+            smart_notifications_background,
             smart_notifications_test,
             smart_notifications_clear,
             list_devices,

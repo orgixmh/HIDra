@@ -348,5 +348,13 @@ export const en = {
   "Reconnect the original USB/RF connection to restore the previous lighting. Configuration from another transport was refused.": "Reconnect the original USB/RF connection to restore the previous lighting. Configuration from another transport was refused.",
   "Saved per-key colours over RF are not supported yet. Use the USB cable.": "Saved per-key colours over RF are not supported yet. Use the USB cable.",
   "RF keyboard did not reply. Wake it with a key press and retry.": "RF keyboard did not reply. Wake it with a key press and retry.",
-  "RF keyboard did not confirm the saved settings": "RF keyboard did not confirm the saved settings"
+  "RF keyboard did not confirm the saved settings": "RF keyboard did not confirm the saved settings",
+  "LIGHTING": "LIGHTING",
+  "PER KEY": "PER KEY",
+  "SMART": "SMART",
+  "Keyboard features": "Keyboard features",
+  "Available": "Available",
+  "Unavailable": "Unavailable",
+  "Rule settings": "Rule settings",
+  "All keys use this colour between alerts. Applied immediately while Smart Notifications is on.": "All keys use this colour between alerts. Applied immediately while Smart Notifications is on."
 } as const;

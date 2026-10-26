@@ -325,10 +325,34 @@
 }
 .workspace__heading {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 12px;
   margin-bottom: 16px;
 }
+.keyboard-capabilities {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+.keyboard-capability {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+.keyboard-capability .led {
+  flex-shrink: 0;
+}
+.keyboard-capability--on {
+  color: var(--text);
+}
+
 .workspace__heading h1 {
   font-size: 24px;
   letter-spacing: 0.2px;
@@ -1269,7 +1293,7 @@
 
 /* Smart Notifications */
 .smart-notifications { display: flex; flex-direction: column; gap: 18px; }
-.smart-grid { display: grid; grid-template-columns: minmax(270px, .85fr) minmax(0, 1.6fr); gap: 18px; align-items: start; }
+.smart-grid { display: grid; grid-template-columns: minmax(240px, .7fr) minmax(0, 1.6fr); gap: 18px; align-items: start; }
 .smart-grid > .panel { min-width: 0; }
 .smart-status { display: flex; gap: 9px; align-items: center; margin-top: 14px; font-size: 12px; color: var(--muted); flex-wrap: wrap; }
 .smart-error { color: #ff8e96; line-height: 1.5; overflow-wrap: anywhere; }
@@ -1283,7 +1307,16 @@
 .smart-editor { display: flex; flex-direction: column; gap: 14px; border-top: 1px solid var(--border); padding-top: 16px; }
 .smart-editor input { width: 100%; }
 .smart-save { display: flex; flex-direction: column; gap: 8px; margin-top: 18px; }
-.smart-keyboard { width: 100%; margin: 12px 0 18px; }
+.smart-keyboard-frame {
+  width: 720px;
+  max-width: 100%;
+  margin: 12px 0 18px;
+  padding: 12px;
+  background: #0b0c0f;
+  border: 1px solid var(--border);
+  border-radius: var(--radius, 10px);
+}
+.smart-keyboard { width: 100%; margin: 0; border: 0; border-radius: 0; }
 .kbd-key.smart-key--selected { outline: 2px solid #fff; outline-offset: 1px; z-index: 1; }
 .kbd-key.smart-key--live { box-shadow: 0 0 12px 3px rgba(130,180,255,.65); }
 .smart-manual-controls { border: 0; margin: 0; padding: 0; min-width: 0; }
@@ -1296,7 +1329,7 @@
 .smart-recent-row span, .smart-recent-row p { font-size: 12px; }
 .smart-recent-row p { margin: 6px 0 0; color: var(--muted); }
 .smart-recent-actions { display: flex; align-items: flex-start; justify-content: flex-end; gap: 7px; flex-wrap: wrap; flex: 0 0 230px; }
-@media (max-width: 1150px) { .smart-grid { grid-template-columns: minmax(0, 1fr); } .smart-grid > .panel:nth-child(2) { grid-row: 1; } }
+@media (max-width: 900px) { .smart-grid { grid-template-columns: minmax(0, 1fr); } }
 
 /* In-app colour selection avoids desktop pickers with preset-only palettes. */
 .colorpicker__palette { padding: 14px; border: 1px solid var(--border-strong); border-radius: var(--radius-sm); background: var(--panel-2); display: grid; gap: 14px; width: min(100%, 360px); box-sizing: border-box; }
@@ -1329,3 +1362,15 @@
 .settings-checkbox { display: flex; align-items: flex-start; gap: 11px; font-size: 14px; line-height: 1.5; cursor: pointer; margin-bottom: 12px; }
 .settings-checkbox input { width: 17px; height: 17px; margin: 2px 0 0; flex: none; accent-color: var(--accent); }
 .settings-checkbox:has(input:disabled) { opacity: .55; cursor: default; }
+
+.smart-recent-toolbar { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.smart-recent-dialog { width: min(960px, calc(100vw - 48px)); max-height: calc(100vh - 64px); padding: 0; overflow: hidden; }
+.smart-recent-dialog[open] { display: flex; flex-direction: column; }
+.smart-recent-dialog__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 18px; padding: 24px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.smart-recent-dialog__header .btn { flex-shrink: 0; }
+.smart-recent-dialog__header .note { margin: 8px 0 12px; }
+.smart-recent-dialog__content { overflow-y: auto; min-height: 0; padding: 0 24px 24px; }
+@media (max-width: 650px) {
+  .smart-recent-dialog .smart-recent-row { flex-direction: column; }
+  .smart-recent-dialog .smart-recent-actions { flex-basis: auto; justify-content: flex-start; }
+}

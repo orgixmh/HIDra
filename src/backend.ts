@@ -149,6 +149,11 @@ function mockBackend<T>(cmd: string, args?: Record<string, unknown>): T {
       try { localStorage.setItem("hidra.smartNotifications.preview", JSON.stringify(mockSmart.settings)); } catch { /* optional */ }
       return structuredCloneSafe(mockSmart) as T;
     }
+    case "smart_notifications_background": {
+      mockSmart.settings.background = structuredCloneSafe(a.color as Rgb);
+      try { localStorage.setItem("hidra.smartNotifications.preview", JSON.stringify(mockSmart.settings)); } catch { /* optional */ }
+      return structuredCloneSafe(mockSmart) as T;
+    }
     case "smart_notifications_clear": {
       mockSmart.lit_keys = [];
       return structuredCloneSafe(mockSmart) as T;
