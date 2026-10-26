@@ -8,9 +8,10 @@ import type { SmartController } from "../../useSmartNotifications";
 import { KeyboardLighting } from "./KeyboardLighting";
 import { KeyboardPerKey } from "./KeyboardPerKey";
 import { KeyboardRemap } from "./KeyboardRemap";
+import { KeyboardSettings } from "./KeyboardSettings";
 import { KeyboardProfiles } from "./KeyboardProfiles";
 
-type KeyboardTab = "led" | "perkey" | "smart" | "remap" | "profiles";
+type KeyboardTab = "led" | "perkey" | "smart" | "remap" | "profiles" | "settings";
 
 const TABS: TabItem<KeyboardTab>[] = [
   { id: "led", label: "Iluminação" },
@@ -18,6 +19,7 @@ const TABS: TabItem<KeyboardTab>[] = [
   { id: "smart", label: "Smart Notifications" },
   { id: "remap", label: "Remapear teclas" },
   { id: "profiles", label: "Perfis" },
+  { id: "settings", label: "Settings" },
 ];
 
 interface KeyboardPanelProps {
@@ -50,7 +52,7 @@ export function KeyboardPanel({
   const [tab, setTab] = useLocalStorage<KeyboardTab>("hidra.keyboardTab", "led");
 
   const tabs = TABS.filter((t) =>
-    t.id === "led" || t.id === "smart" ||
+    t.id === "led" || t.id === "smart" || t.id === "settings" ||
     (t.id === "perkey" && (capabilities?.per_key ?? true)) ||
     (t.id === "remap" && (capabilities?.remap ?? true)) ||
     (t.id === "profiles" && (capabilities?.profiles ?? 3) > 1));
@@ -91,7 +93,7 @@ export function KeyboardPanel({
       )}
 
       <div className="workspace__body">
-        {active === "smart" ? <SmartNotifications controller={smart}
+        {active === "settings" ? <KeyboardSettings present={present} model={name} /> : active === "smart" ? <SmartNotifications controller={smart}
           layout={capabilities?.layout ?? undefined} aspect={capabilities?.layout_aspect ?? undefined}
           supported={capabilities?.smart_notifications ?? false} present={present} /> : <>
         {smart.view?.active && <p className="note">{t("Smart Notifications controls the lighting. Turn it off to use manual controls.")}</p>}

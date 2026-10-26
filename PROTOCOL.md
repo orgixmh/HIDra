@@ -367,3 +367,57 @@ firmware, remap, reset, or generic raw-command interfaces are exposed.
 
 Cross-checks: [receiver protocol notes](https://github.com/SibteProf/keylux/blob/main/docs/PROTOCOL.md)
 and [Compx paged read/write implementation](https://github.com/dnviti/aula-x99-pro-driver-linux/blob/master/aula_f99pro.py).
+
+## Host RGB calibration
+
+Keyboard Settings exposes optional per-model channel gains, disabled by default.
+The owner supplied K673SP white target is 255/153/161, stored only in devices.rs.
+Profiles in keyboard-calibration.json are keyed by the complete model identity,
+so this model shares a preference across cable and RF. A channel is transmitted
+as round(input * calibrated_white / 255), with each white channel in 1..255.
+This is white balance, not a measured gamma or gamut correction.
+
+Transform only requested solid-colour palette slots, requested saved per-key
+cells, and composed volatile notification frames. Notification rules/backgrounds
+remain logical RGB; active streams pick up profile changes on their next tick.
+Mode blocks, identity bytes, untouched palette entries and recovery snapshots
+remain raw and never pass through calibration. Manual colour read-back uses the
+inverse gain (rounded/clamped) to avoid applying compensation twice after Refresh.
+Rainbow/firmware-generated colours are not corrected. After a calibration change,
+manual Lighting/per-key colours require Apply again; no automatic flash writes
+are made by the calibration setting itself.
+
+## Smart system monitoring
+
+Optional CPU/RAM/root-filesystem meters persist independently of draft rules.
+They are sampled read-only about once per second only while Smart owns lighting.
+Linux CPU usage uses deltas of the aggregate /proc/stat counters (first eight
+columns; idle+iowait treated as idle, guest columns not counted twice). The first
+CPU sample establishes a baseline. RAM uses (MemTotal-MemAvailable)/MemTotal.
+Definitions follow the [kernel proc documentation](https://docs.kernel.org/filesystems/proc.html).
+Disk uses statvfs("/"): used/(used+available-to-user), matching df's usable-space
+percentage. It measures space, not I/O activity; other mount points are not read.
+
+A model's three ten-key rows live only in devices.rs. K673SP uses Q–P, A–;,
+and Z–/. Each rounded percentage selects one moving key: 0–4% leaves background,
+5–15% selects the first, 16–25% the second, through 96–100% the tenth. Raw usage
+strictly above 90% blinks that key with 700ms phases on the existing frame tick.
+Composition is background < monitoring < notifications; alerts own their keys
+through their own off phase. Calibration runs after composition. Sampling errors
+show per-meter errors and leave that meter at background, never stale values.
+No new HID queries, mode changes, scripts or saved-colour writes occur on samples.
+Meter switches/colours save immediately without clearing alerts or saving draft
+rules. Disabling Smart stops sampling; its next activation takes fresh samples.
+
+## Passive RF fault capture
+
+scripts/capture-rf-lighting.py takes VID/PID/interface arguments rather than a
+model-specific device table. It observes usbmon only, retaining a 120-second
+ring of report-13 vendor traffic, associated OUT completions, vendor-interface
+IN transfer errors and receiver presence/address changes. Records include kernel
+microsecond timestamps and URB IDs for fragment timing/correlation. Ctrl+C writes
+the ring to an exclusive, owner-readable /tmp JSONL file and appends a precise
+stop marker for comparison with the owner's observed fault. No device writes
+are performed. Successful boot/NKRO/media payloads are not retained. This cannot
+establish over-air delivery; a clean USB capture alone does not prove that the
+keyboard received a complete radio message.

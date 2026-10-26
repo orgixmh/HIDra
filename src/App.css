@@ -1374,3 +1374,16 @@
   .smart-recent-dialog .smart-recent-row { flex-direction: column; }
   .smart-recent-dialog .smart-recent-actions { flex-basis: auto; justify-content: flex-start; }
 }
+
+.calibration-channels { display: flex; gap: 16px; flex-wrap: wrap; }
+.calibration-channels label { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+.calibration-channels input { width: 100px; }
+
+.system-monitoring { border-top: 1px solid var(--border); margin-top: 20px; padding-top: 18px; }
+.system-monitoring h3 { font-size: 13px; margin: 0 0 8px; }
+.system-monitoring__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin-top: 14px; }
+.system-monitoring__meter { border: 1px solid var(--border); border-radius: 10px; padding: 14px; min-width: 0; }
+.system-monitoring__heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.system-monitoring__meter .colorpicker__top { flex-wrap: wrap; }
+.system-monitoring__meter .colorpicker__palette { width: 100%; }
+@media (max-width: 900px) { .system-monitoring__grid { grid-template-columns: minmax(0, 1fr); } }

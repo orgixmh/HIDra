@@ -3,6 +3,7 @@
 use crate::desktop_notifications::{self, Listener};
 use crate::notification_lighting::{self, Lighting, Snapshot};
 use crate::script_notifications::{self, Runner};
+use crate::system_monitor;
 use parking_lot::Mutex;
 use serde::{Deserialize, Serialize};
 use std::{
@@ -28,6 +29,7 @@ pub struct Settings {
     pub rules: Vec<Rule>,
     #[serde(default = "default_background")]
     pub background: [u8; 3],
+    pub monitoring: system_monitor::Config,
 }
 
 fn default_background() -> [u8; 3] {
@@ -39,6 +41,7 @@ impl Default for Settings {
             enabled: false,
             rules: Vec::new(),
             background: default_background(),
+            monitoring: system_monitor::Config::default(),
         }
     }
 }
@@ -123,12 +126,14 @@ pub struct View {
     pub recent: Vec<RecentNotification>,
     pub lit_keys: Vec<u16>,
     pub scripts: Vec<ScriptStatus>,
+    pub metrics: system_monitor::Sample,
 }
 
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 pub(crate) enum Command {
     Save(Settings, SyncSender<Result<View, String>>),
     Background([u8; 3], SyncSender<Result<View, String>>),
+    Monitoring(system_monitor::Config, SyncSender<Result<View, String>>),
     Notification(DesktopNotification, NotificationId),
     Closed(NotificationId),
     Clear(SyncSender<Result<View, String>>),
@@ -179,6 +184,7 @@ impl SmartNotifications {
             recent: Vec::new(),
             lit_keys: Vec::new(),
             scripts: Vec::new(),
+            metrics: system_monitor::Sample::default(),
         }));
         let (sender, receiver) = mpsc::sync_channel(128);
         let worker = Worker {
@@ -192,6 +198,8 @@ impl SmartNotifications {
             listener: None,
             alerts: Vec::new(),
             last_frame: Instant::now(),
+            monitor_epoch: Instant::now(),
+            sampler: system_monitor::Sampler::default(),
             scripts: None,
             generation: 0,
         };
@@ -222,6 +230,14 @@ impl SmartNotifications {
             .map_err(|_| "Notification worker stopped")?;
         rx.recv_timeout(Duration::from_secs(180))
             .map_err(|_| "Notification background update timed out".to_string())?
+    }
+    pub fn monitoring(&self, config: system_monitor::Config) -> Result<View, String> {
+        let (tx, rx) = mpsc::sync_channel(1);
+        self.sender
+            .send(Command::Monitoring(config, tx))
+            .map_err(|_| "Notification worker stopped")?;
+        rx.recv_timeout(Duration::from_secs(180))
+            .map_err(|_| "Monitoring settings timed out".to_string())?
     }
     pub fn test(&self, id: String) -> Result<View, String> {
         let (tx, rx) = mpsc::sync_channel(1);
@@ -264,6 +280,8 @@ struct Worker {
     listener: Option<Listener>,
     alerts: Vec<Alert>,
     last_frame: Instant,
+    monitor_epoch: Instant,
+    sampler: system_monitor::Sampler,
     scripts: Option<Runner>,
     generation: u64,
 }
@@ -346,6 +364,8 @@ impl Worker {
         Ok(())
     }
     fn restore(&mut self) -> Result<(), String> {
+        self.sampler = system_monitor::Sampler::default();
+        self.view.lock().metrics = system_monitor::Sample::default();
         self.scripts.take();
         self.generation = self.generation.wrapping_add(1);
         self.view.lock().scripts.clear();
@@ -394,6 +414,15 @@ impl Worker {
         self.view.lock().settings.background = color;
         // A background edit must preserve current alerts, script runners and
         // lighting ownership. Only the next volatile frame needs to change.
+        self.light()?;
+        self.publish();
+        Ok(self.view.lock().clone())
+    }
+    fn monitoring(&mut self, config: system_monitor::Config) -> Result<View, String> {
+        let mut settings = self.view.lock().settings.clone();
+        settings.monitoring = config;
+        atomic_json(&self.path, &settings)?;
+        self.view.lock().settings.monitoring = settings.monitoring;
         self.light()?;
         self.publish();
         Ok(self.view.lock().clone())
@@ -471,10 +500,37 @@ impl Worker {
     }
     fn light(&mut self) -> Result<(), String> {
         if let Some(lighting) = &self.lighting {
-            let background = self.view.lock().settings.background;
-            let cells = compose_cells(background, &self.alerts, Instant::now());
-            lighting.frame(&cells).map_err(|e| e.to_string())?;
+            let settings = self.view.lock().settings.clone();
+            let now = Instant::now();
+            let updated = if let Some(sample) = self.sampler.sample(&settings.monitoring, now) {
+                self.view.lock().metrics = sample;
+                true
+            } else {
+                false
+            };
+            let sample = self.view.lock().metrics.clone();
+            let mut cells: BTreeMap<_, _> = compose_cells(settings.background, &self.alerts, now)
+                .into_iter()
+                .collect();
+            let visible = self.monitor_epoch.elapsed().as_millis() / 700 % 2 == 0;
+            for (offset, color) in lighting.monitoring_cells(&settings.monitoring, &sample, visible)
+            {
+                // Alerts own their keys even during their blink's background phase.
+                if !self
+                    .alerts
+                    .iter()
+                    .any(|alert| alert.rule.keys.contains(&offset))
+                {
+                    cells.insert(offset, color);
+                }
+            }
+            lighting
+                .frame(&cells.into_iter().collect::<Vec<_>>())
+                .map_err(|e| e.to_string())?;
             self.last_frame = Instant::now();
+            if updated {
+                self.publish();
+            }
         }
         Ok(())
     }
@@ -558,6 +614,14 @@ impl Worker {
                 }
                 Ok(Command::Background(color, reply)) => {
                     let result = self.background(color);
+                    if let Err(error) = &result {
+                        self.fail(error.clone());
+                        self.publish();
+                    }
+                    let _ = reply.send(result);
+                }
+                Ok(Command::Monitoring(config, reply)) => {
+                    let result = self.monitoring(config);
                     if let Err(error) = &result {
                         self.fail(error.clone());
                         self.publish();
@@ -894,6 +958,7 @@ mod tests {
             enabled: true,
             rules: vec![rule()],
             background: default_background(),
+            monitoring: system_monitor::Config::default(),
         };
         assert!(validate(&settings).is_ok());
         settings.rules[0].keys = vec![1];
@@ -924,6 +989,7 @@ mod tests {
             enabled: true,
             rules: vec![rule()],
             background: default_background(),
+            monitoring: system_monitor::Config::default(),
         };
         atomic_json(&path, &settings).unwrap();
         let saved = read_json::<Settings>(&path).unwrap().unwrap();

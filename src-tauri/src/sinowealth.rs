@@ -181,11 +181,11 @@ pub fn read_state(api: &HidApi) -> Result<KbState> {
         direction: None,
         full_rgb: Some(color_slot == 7),
         color: meta.filter(|e| e.color).map(|_| {
-            [
+            crate::calibration::profile(spec).decode([
                 palette[color_off],
                 palette[color_off + 1],
                 palette[color_off + 2],
-            ]
+            ])
         }),
     })
 }
@@ -260,7 +260,7 @@ pub fn set_effect(
         &mut config,
         &mut palette,
         effect,
-        rgb,
+        crate::calibration::profile(spec).apply(rgb),
         brightness,
         speed,
         full_rgb,
@@ -285,11 +285,13 @@ pub fn set_custom_colors(api: &HidApi, cells: Vec<CustomCell>) -> Result<()> {
     }
     let mut config = read(&link, 0x84, 0, CONFIG_LEN)?;
     let mut colors = read(&link, 0x86, 0, CUSTOM_LEN)?;
+    let calibration = crate::calibration::profile(spec);
     for cell in cells {
         let slot = cell.off as usize / 3;
-        colors[slot] = cell.r;
-        colors[PLANE_LEN + slot] = cell.g;
-        colors[2 * PLANE_LEN + slot] = cell.b;
+        let [r, g, b] = calibration.apply([cell.r, cell.g, cell.b]);
+        colors[slot] = r;
+        colors[PLANE_LEN + slot] = g;
+        colors[2 * PLANE_LEN + slot] = b;
     }
     write_verified(&link, 0x06, &colors)?;
     config[9] = 1;

@@ -69,7 +69,11 @@ impl Lighting {
     }
 
     pub fn frame(&self, cells: &[(u16, [u8; 3])]) -> Result<()> {
-        let frame = live_frame(self.spec, cells)?;
+        let mut frame = live_frame(self.spec, cells)?;
+        let calibration = crate::calibration::profile(self.spec);
+        for rgb in frame.chunks_exact_mut(3) {
+            rgb.copy_from_slice(&calibration.apply([rgb[0], rgb[1], rgb[2]]));
+        }
         if self.link.protocol == Protocol::CompxKeyboard20 {
             let next: Vec<_> = self
                 .spec
@@ -88,6 +92,15 @@ impl Lighting {
         }
         self.link
             .feature_write(&sinowealth::packet(0x08, 0, frame.len(), &frame)?)
+    }
+
+    pub fn monitoring_cells(
+        &self,
+        config: &crate::system_monitor::Config,
+        sample: &crate::system_monitor::Sample,
+        visible: bool,
+    ) -> Vec<(u16, [u8; 3])> {
+        crate::system_monitor::cells(self.spec, config, sample, visible)
     }
 
     pub fn restore(&self, snapshot: &Snapshot) -> Result<()> {

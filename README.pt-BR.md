@@ -341,3 +341,35 @@ pessoa que tem o aparelho.
 
 [GPL-3.0-or-later](LICENSE). Use por sua conta e risco: todo painel tem um botão
 **Restaurar padrão**, e nada aqui grava firmware.
+
+### Calibração de cores do teclado
+
+A aba **Configurações** do teclado oferece balanço de branco RGB opcional para
+modelos compatíveis. Ative-o e informe os valores RGB que parecem brancos no
+teclado; o branco lógico (255/255/255) é convertido nesses valores e as demais
+cores escolhidas são ajustadas proporcionalmente. O K673SP oferece 255/153/161
+como sugestão do proprietário, com a correção desativada por padrão. USB e RF
+compartilham a preferência do modelo. O Smart Notifications atualiza no próximo
+quadro; reaplique as cores manuais após alterar a calibração. Cores de efeitos
+de arco-íris internos não são corrigidas.
+
+### Monitoramento do sistema no Smart Notifications
+
+Ative CPU, RAM e/ou **Espaço em disco (/)** e escolha uma cor para cada medidor.
+O K673SP usa uma tecla móvel nas linhas Q–P (CPU), A–; (RAM) e Z–/ (disco).
+A primeira tecla representa 5–15%, a segunda 16–25%, até 96–100% na última;
+abaixo de 5% a linha mantém o fundo. Acima de 90%, a indicação pisca.
+O disco indica espaço usado no sistema de arquivos raiz. As leituras Linux
+atualizam aproximadamente a cada segundo enquanto o Smart está ligado.
+Notificações têm prioridade nas teclas em comum e a calibração RGB também se
+aplica às cores do monitoramento.
+
+### Captura de falhas intermitentes na iluminação RF (Linux)
+
+Execute `sudo python3 scripts/capture-rf-lighting.py --vid 3554 --pid fa09 --interface 1`
+no repositório. Mantenha o HIDra funcionando normalmente e pressione Ctrl+C assim
+que a falha aparecer. O script informa o arquivo `/tmp/hidra-rf-*.jsonl` com os
+últimos 120 segundos e um marcador de parada. Ele registra passivamente o relatório
+0x13, conclusões/erros de transferência e desconexões/reconexões do receptor; não
+envia comandos HID nem salva teclas digitadas. A captura observa o canal USB até
+o receptor, não o enlace de rádio. O arquivo pertence ao usuário que o executou.

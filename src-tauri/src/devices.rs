@@ -180,6 +180,9 @@ pub fn of_kind(kind: Kind) -> impl Iterator<Item = &'static Device> {
 pub struct SinowealthSpec {
     pub identity: [u8; 6],
     pub palette_len: usize,
+    /// Owner-supplied starting white balance; disabled until explicitly enabled.
+    pub calibration_white: [u8; 3],
+    pub monitor_rows: &'static [[&'static str; 10]; 3],
     /// Mode changes required before volatile RGB streaming (offset, value).
     pub stream_config: &'static [(usize, u8)],
     pub aspect: f32,
@@ -214,6 +217,8 @@ pub struct KeyboardKey {
 const K673SP: SinowealthSpec = SinowealthSpec {
     identity: [3, 0, 0, 0, 0, 0xba],
     palette_len: 512,
+    calibration_white: [255, 153, 161],
+    monitor_rows: &K673SP_MONITOR_ROWS,
     stream_config: &[(9, 1), (10, 21), (59, 0x47)],
     aspect: 2.615,
     brightness_max: 4,
@@ -226,6 +231,8 @@ const K673SP: SinowealthSpec = SinowealthSpec {
 const K673SP_RF: SinowealthSpec = SinowealthSpec {
     identity: [3, 0, 0, 0, 0, 0xba],
     palette_len: 490,
+    calibration_white: [255, 153, 161],
+    monitor_rows: &K673SP_MONITOR_ROWS,
     stream_config: &[(9, 1), (10, 21), (59, 0x47)],
     aspect: 2.615,
     brightness_max: 4,
@@ -233,6 +240,12 @@ const K673SP_RF: SinowealthSpec = SinowealthSpec {
     effects: &K673SP_EFFECTS,
     keys: &K673SP_KEYS,
 };
+
+const K673SP_MONITOR_ROWS: [[&str; 10]; 3] = [
+    ["Q", "W", "E", "R", "T", "Y", "U", "I", "O", "P"],
+    ["A", "S", "D", "F", "G", "H", "J", "K", "L", ";"],
+    ["Z", "X", "C", "V", "B", "N", "M", ",", ".", "/"],
+];
 
 const K673SP_EFFECTS: [SinowealthEffect; 18] = [
     SinowealthEffect {

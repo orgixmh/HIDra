@@ -9,6 +9,7 @@ import type { SmartController } from "../../useSmartNotifications";
 import { useToast } from "../Toast";
 import { ColorPicker } from "../ui/ColorPicker";
 import { Field, Panel } from "../ui/Panel";
+import { SystemMonitoring } from "./SystemMonitoring";
 import { Toggle } from "../ui/Toggle";
 
 interface Props {
@@ -102,7 +103,7 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
   const toggle = (on: boolean) => {
     if (!view) return;
     // Off must always work, even if the unsaved rule being edited is incomplete.
-    const settings = on ? { enabled: true, rules, background } : { ...view.settings, enabled: false };
+    const settings = on ? { ...view.settings, enabled: true, rules, background } : { ...view.settings, enabled: false };
     void action(() => save(settings), on ? "Smart Notifications enabled" : "Previous lighting restored");
   };
   const selectedNames = keys.filter((key) => draft?.keys.includes(key.off)).map((key) => t(key.label));
@@ -116,6 +117,7 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
         <Field label={t("Background colour")} hint={t("All keys use this colour between alerts. Applied immediately while Smart Notifications is on.")}>
           <ColorPicker value={background} onChange={changeBackground} />
         </Field>
+        <SystemMonitoring controller={controller} available={available} />
         <div className="smart-status" role="status">
           <span className={`led${view?.status === "listening" ? " led--on" : ""}`} />
           {t(view?.status === "listening" ? "Listening for desktop notifications" : view?.status === "starting" ? "Starting Smart Notifications…" : enabled ? "Notification listener needs attention" : "Smart Notifications is off")}
@@ -148,7 +150,7 @@ export function SmartNotifications({ controller, layout, aspect, supported, pres
           </div>
           <div className="smart-save">
             <button className="btn btn--primary" type="button" disabled={busy || !view || !valid || !dirty}
-              onClick={() => void action(() => save({ enabled, rules, background }), "Notification rules saved")}>{t("Save rules")}</button>
+              onClick={() => void action(async () => { if (view) await save({ ...view.settings, enabled, rules, background }); }, "Notification rules saved")}>{t("Save rules")}</button>
             {!valid && <p className="note">{t("Each rule needs a name, a notification filter or script path, at least one key and a valid duration / interval.")}</p>}
           </div>
         </Panel>

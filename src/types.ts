@@ -135,7 +135,16 @@ export interface NotificationRule {
   script_path: string;
   interval_seconds: number;
 }
-export interface SmartSettings { enabled: boolean; rules: NotificationRule[]; background: Rgb }
+export interface MonitoringMeter { enabled: boolean; color: Rgb }
+export interface MonitoringSettings { cpu: MonitoringMeter; ram: MonitoringMeter; disk: MonitoringMeter }
+export const DEFAULT_MONITORING: MonitoringSettings = {
+  cpu: { enabled: false, color: [0, 190, 255] },
+  ram: { enabled: false, color: [150, 80, 255] },
+  disk: { enabled: false, color: [255, 140, 0] },
+};
+export interface SystemReading { percent: number | null; error: string | null }
+export interface SystemMetrics { cpu: SystemReading; ram: SystemReading; disk: SystemReading }
+export interface SmartSettings { enabled: boolean; rules: NotificationRule[]; background: Rgb; monitoring: MonitoringSettings }
 export interface SmartView {
   settings: SmartSettings;
   active: boolean;
@@ -144,4 +153,5 @@ export interface SmartView {
   recent: { app: string; title: string; body: string; matched: boolean }[];
   lit_keys: number[];
   scripts: { id: string; running: boolean; last_exit: number | null; error: string | null }[];
+  metrics: SystemMetrics;
 }

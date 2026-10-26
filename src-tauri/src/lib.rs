@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 mod autostart;
+mod calibration;
 mod compx_keyboard;
 mod desktop_lifecycle;
 mod desktop_notifications;
@@ -16,6 +17,7 @@ mod notification_lighting;
 mod script_notifications;
 mod sinowealth;
 mod smart_notifications;
+mod system_monitor;
 mod update;
 
 use error::Result;
@@ -69,6 +71,14 @@ fn smart_notifications_background(
     color: [u8; 3],
 ) -> std::result::Result<smart_notifications::View, String> {
     smart.background(color)
+}
+
+#[tauri::command]
+fn smart_notifications_monitoring(
+    smart: State<smart_notifications::SmartNotifications>,
+    monitoring: system_monitor::Config,
+) -> std::result::Result<smart_notifications::View, String> {
+    smart.monitoring(monitoring)
 }
 
 #[tauri::command]
@@ -220,6 +230,27 @@ fn mouse_set_button(app: State<App>, index: usize, action: mouse::Action) -> Res
 // ---- Keyboard commands -------------------------------------------------
 
 #[tauri::command]
+fn keyboard_calibration_get(app: State<App>) -> Option<calibration::View> {
+    with_api(&app, |api| {
+        let spec = hid::find(api, hid::Kind::Keyboard)?.device.sinowealth?;
+        Some(calibration::get(spec))
+    })
+}
+
+#[tauri::command]
+fn keyboard_calibration_save(
+    app: State<App>,
+    profile: calibration::Profile,
+) -> std::result::Result<calibration::View, String> {
+    with_api(&app, |api| {
+        let spec = hid::find(api, hid::Kind::Keyboard)
+            .and_then(|found| found.device.sinowealth)
+            .ok_or("Calibration requires a connected keyboard with calibration support.")?;
+        calibration::save(spec, profile)
+    })
+}
+
+#[tauri::command]
 fn keyboard_read_state(app: State<App>, profile: u8) -> Result<keyboard::KbState> {
     with_keyboard_api(&app, |api| keyboard_driver::read_state(api, profile))
 }
@@ -338,6 +369,7 @@ pub fn run() {
         })
         .setup(move |app| {
             let directory = app.path().app_config_dir()?;
+            calibration::init(directory.clone());
             let smart = smart_notifications::SmartNotifications::start(
                 app.handle().clone(),
                 directory,
@@ -358,6 +390,7 @@ pub fn run() {
             smart_notifications_get,
             smart_notifications_save,
             smart_notifications_background,
+            smart_notifications_monitoring,
             smart_notifications_test,
             smart_notifications_clear,
             list_devices,
@@ -370,6 +403,8 @@ pub fn run() {
             mouse_set_polling,
             mouse_set_button,
             keyboard_read_state,
+            keyboard_calibration_get,
+            keyboard_calibration_save,
             keyboard_effects,
             keyboard_set_effect,
             keyboard_set_brightness,

@@ -346,3 +346,33 @@ device.
 
 [GPL-3.0-or-later](LICENSE). Use at your own risk: every panel has a
 **restore defaults** button, and nothing here can be flashed to firmware.
+
+### Keyboard colour calibration
+
+The keyboard **Settings** tab offers optional RGB white balance for supported
+models. Enable it and enter the RGB values that look white on your keyboard;
+logical white (255/255/255) is mapped to those values and other chosen colours
+are scaled proportionally. K673SP starts with the owner's suggested 255/153/161,
+with correction off by default. USB and RF share the model's saved preference.
+Smart Notifications updates on its next frame; reapply manual Lighting/per-key
+colours after changing calibration. Built-in rainbow colours are not corrected.
+
+### System monitoring in Smart Notifications
+
+Enable CPU, RAM and/or **Disk space (/)** with a separate colour for each meter.
+The K673SP shows one moving key on Q–P (CPU), A–; (RAM), and Z–/ (disk). The
+first key represents 5–15%, the second 16–25%, through 96–100% at the last key;
+below 5% the row stays at its background. Above 90% the indicator blinks.
+Disk means used space on the root filesystem. Live Linux readings update about
+once per second while Smart is on; notifications take priority on overlapping
+keys, and RGB calibration applies to the monitoring colours too.
+
+### Capturing intermittent RF lighting faults (Linux)
+
+Run `sudo python3 scripts/capture-rf-lighting.py --vid 3554 --pid fa09 --interface 1`
+from the repository. Leave HIDra running normally and press Ctrl+C immediately
+when the fault appears. The helper prints a `/tmp/hidra-rf-*.jsonl` path containing
+the last 120 seconds and a stop marker. It passively records vendor report 0x13,
+transfer completions/errors and receiver disconnect/reconnect events; it does not
+send HID commands or retain typed-key reports. This observes the USB channel to
+the receiver, not the over-air radio link. The file is owned by the invoking user.
