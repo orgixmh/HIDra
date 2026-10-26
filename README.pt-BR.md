@@ -112,6 +112,16 @@ ambiente no próprio script. **Testar regra** apenas demonstra a iluminação.
 A paleta interna **Cor personalizada** oferece seleção de saturação/brilho,
 controles de matiz, saturação e brilho, canais RGB e entrada HEX.
 
+O HIDra também tem um ícone na barra superior/bandeja, com **Mostrar HIDra** e
+**Sair do HIDra**. Quando o Smart Notifications está ativo, fechar a janela oferece
+**Manter na barra superior**, **Sair do HIDra** ou **Cancelar**. Manter na barra
+superior oculta a janela enquanto notificações e scripts continuam funcionando;
+use o menu do ícone para reabrir a mesma janela. Sair interrompe o monitoramento
+e os scripts e restaura a iluminação anterior. Com o modo desativado, fechar
+encerra normalmente. Se a área de trabalho não tiver uma bandeja ativa, a opção
+de manter no fundo fica indisponível para não ocultar a janela sem acesso.
+GNOME exige uma extensão AppIndicator ativa (o Ubuntu inclui Ubuntu AppIndicators).
+
 O monitor usa o D-Bus da sessão, sem root nem substituir o serviço de notificações.
 Se a sessão bloquear o monitoramento, o painel apresenta um erro. Quadros RGB
 temporários usam uma conexão HID aberta; o quadro de fundo ocioso exige atualização

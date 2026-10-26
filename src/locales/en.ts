@@ -321,5 +321,15 @@ export const en = {
   "Script must exit with 0 (clear) or 1 (trigger)": "Script must exit with 0 (clear) or 1 (trigger)",
   "Script exceeded the 10-second timeout": "Script exceeded the 10-second timeout",
   "Choose an absolute path to an executable script": "Choose an absolute path to an executable script",
-  "Script interval must be between 5 and 86400 seconds": "Script interval must be between 5 and 86400 seconds"
+  "Script interval must be between 5 and 86400 seconds": "Script interval must be between 5 and 86400 seconds",
+  "Keep Smart Notifications running?": "Keep Smart Notifications running?",
+  "Smart Notifications is on. Exiting HIDra will stop notification alerts and script checks, and restore your previous lighting.": "Smart Notifications is on. Exiting HIDra will stop notification alerts and script checks, and restore your previous lighting.",
+  "Keep HIDra in the top bar to close this window while notifications continue. Open it again from the HIDra icon.": "Keep HIDra in the top bar to close this window while notifications continue. Open it again from the HIDra icon.",
+  "The top bar icon is unavailable. Keep this window open to continue Smart Notifications.": "The top bar icon is unavailable. Keep this window open to continue Smart Notifications.",
+  "Cancel": "Cancel",
+  "Exit HIDra": "Exit HIDra",
+  "Show HIDra": "Show HIDra",
+  "Keep in top bar": "Keep in top bar",
+  "HIDra window is unavailable": "HIDra window is unavailable",
+  "Unknown close action": "Unknown close action"
 } as const;

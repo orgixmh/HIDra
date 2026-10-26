@@ -2,6 +2,7 @@
 // Copyright (C) 2026 HIDra contributors.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+mod desktop_lifecycle;
 mod desktop_notifications;
 mod devices;
 mod error;
@@ -73,6 +74,28 @@ fn smart_notifications_clear(
     smart: State<smart_notifications::SmartNotifications>,
 ) -> std::result::Result<smart_notifications::View, String> {
     smart.clear()
+}
+
+#[tauri::command]
+fn desktop_lifecycle_status(
+    shell: State<desktop_lifecycle::DesktopLifecycle>,
+) -> desktop_lifecycle::Status {
+    shell.status()
+}
+#[tauri::command]
+fn desktop_lifecycle_language(
+    shell: State<desktop_lifecycle::DesktopLifecycle>,
+    language: String,
+) -> std::result::Result<(), String> {
+    shell.language(&language)
+}
+#[tauri::command]
+fn desktop_lifecycle_close(
+    app: tauri::AppHandle,
+    shell: State<desktop_lifecycle::DesktopLifecycle>,
+    choice: String,
+) -> std::result::Result<(), String> {
+    shell.close(&app, &choice)
 }
 
 #[derive(Serialize)]
@@ -297,9 +320,14 @@ pub fn run() {
                 setup_gate,
             );
             app.manage(smart);
+            app.manage(desktop_lifecycle::DesktopLifecycle::setup(app.handle()));
             Ok(())
         })
+        .on_window_event(desktop_lifecycle::on_window_event)
         .invoke_handler(tauri::generate_handler![
+            desktop_lifecycle_status,
+            desktop_lifecycle_language,
+            desktop_lifecycle_close,
             smart_notifications_get,
             smart_notifications_save,
             smart_notifications_test,

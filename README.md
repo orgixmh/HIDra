@@ -119,6 +119,16 @@ previews lighting only; it does not execute the script.
 The in-app **Custom colour** palette offers a saturation/brightness plane, hue,
 saturation and brightness sliders, RGB channels and direct HEX entry.
 
+HIDra also has a top bar/system tray icon with **Show HIDra** and **Exit HIDra**.
+When Smart Notifications is enabled, closing the window asks whether to **Keep
+in top bar**, **Exit HIDra**, or **Cancel**. Keeping it in the top bar hides the
+window while notification monitoring and scripts keep running; use the icon's
+menu to reopen the same window. Exiting stops monitoring/scripts and restores
+the previous lighting. With Smart Notifications off, closing exits normally.
+If the desktop has no active tray host, the background option is unavailable
+so the window cannot be hidden without a way to reopen it. GNOME requires an
+enabled AppIndicator extension (Ubuntu includes Ubuntu AppIndicators).
+
 The listener uses the session D-Bus notification service without root or replacing
 your notification daemon. If the session disallows monitoring, the panel displays
 an error. Smart mode uses temporary RGB frames and keeps one HID handle open;

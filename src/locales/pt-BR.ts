@@ -323,5 +323,15 @@ export const ptBR = {
   "Script must exit with 0 (clear) or 1 (trigger)": "O script deve sair com 0 (limpar) ou 1 (ativar)",
   "Script exceeded the 10-second timeout": "O script excedeu o limite de 10 segundos",
   "Choose an absolute path to an executable script": "Escolha um caminho absoluto para um script executável",
-  "Script interval must be between 5 and 86400 seconds": "O intervalo deve estar entre 5 e 86400 segundos"
+  "Script interval must be between 5 and 86400 seconds": "O intervalo deve estar entre 5 e 86400 segundos",
+  "Keep Smart Notifications running?": "Manter o Smart Notifications em execução?",
+  "Smart Notifications is on. Exiting HIDra will stop notification alerts and script checks, and restore your previous lighting.": "O Smart Notifications está ativo. Sair do HIDra interrompe os alertas e as verificações de scripts, e restaura a iluminação anterior.",
+  "Keep HIDra in the top bar to close this window while notifications continue. Open it again from the HIDra icon.": "Mantenha o HIDra na barra superior para fechar esta janela e continuar as notificações. Abra-o novamente pelo ícone do HIDra.",
+  "The top bar icon is unavailable. Keep this window open to continue Smart Notifications.": "O ícone da barra superior está indisponível. Mantenha esta janela aberta para continuar o Smart Notifications.",
+  "Cancel": "Cancelar",
+  "Exit HIDra": "Sair do HIDra",
+  "Show HIDra": "Mostrar HIDra",
+  "Keep in top bar": "Manter na barra superior",
+  "HIDra window is unavailable": "A janela do HIDra está indisponível",
+  "Unknown close action": "Ação de fechamento desconhecida"
 } satisfies Record<keyof typeof en, string>;

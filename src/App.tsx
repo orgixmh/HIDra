@@ -19,6 +19,7 @@ import {
 import { useLocalStorage, useUpdater } from "./hooks";
 import { ToastProvider, useToast } from "./components/Toast";
 import { useSmartNotifications } from "./useSmartNotifications";
+import { CloseToTray } from "./components/CloseToTray";
 import { Sidebar } from "./components/Sidebar";
 import { UpdateBanner } from "./components/UpdateBanner";
 import { SegmentedControl } from "./components/ui/SegmentedControl";
@@ -122,6 +123,7 @@ function AppShell() {
 
   return (
     <div className="app">
+      <CloseToTray />
       <Sidebar
         devices={devices}
         lightingLocked={smart.view?.active ?? false}
