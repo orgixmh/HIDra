@@ -333,5 +333,16 @@ export const ptBR = {
   "Show HIDra": "Mostrar HIDra",
   "Keep in top bar": "Manter na barra superior",
   "HIDra window is unavailable": "A janela do HIDra está indisponível",
-  "Unknown close action": "Ação de fechamento desconhecida"
+  "Unknown close action": "Ação de fechamento desconhecida",
+  "Settings": "Configurações",
+  "Startup": "Inicialização",
+  "Start HIDra automatically when I sign in": "Iniciar o HIDra automaticamente ao entrar na sessão",
+  "HIDra will start in the top bar without opening the main window. Smart Notifications resumes if it was left on.": "O HIDra inicia na barra superior sem abrir a janela principal. O Smart Notifications é retomado se estava ativo.",
+  "Loading startup settings…": "Carregando configurações de inicialização…",
+  "Automatic startup is available in the desktop app.": "A inicialização automática está disponível no aplicativo desktop.",
+  "Automatic startup requires a standalone HIDra build, not the development server.": "A inicialização automática exige uma versão independente do HIDra, sem o servidor de desenvolvimento.",
+  "Automatic startup is currently available on Linux.": "A inicialização automática está disponível no Linux.",
+  "Application path cannot be used for automatic startup": "O caminho do aplicativo não pode ser usado para inicialização automática",
+  "Invalid startup directory": "Diretório de inicialização inválido",
+  "Done": "Concluído"
 } satisfies Record<keyof typeof en, string>;

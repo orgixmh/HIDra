@@ -1,4 +1,4 @@
-import { LanguageSelect } from "./LanguageSelect";
+import { Settings } from "./Settings";
 import { useTranslation } from "../i18n";
 import type { DeviceKind, ListDevices, Profile } from "../types";
 import { SegmentedControl } from "./ui/SegmentedControl";
@@ -127,7 +127,7 @@ export function Sidebar({
       </nav>
 
       <div className="sidebar__foot">
-        <LanguageSelect />
+        <Settings />
         <span className="sidebar__hint">
           {t("Configuração local via 2.4G / cabo")}</span>
         <div className="sidebar__version">

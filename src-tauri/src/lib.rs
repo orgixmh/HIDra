@@ -2,6 +2,7 @@
 // Copyright (C) 2026 HIDra contributors.
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+mod autostart;
 mod desktop_lifecycle;
 mod desktop_notifications;
 mod devices;
@@ -96,6 +97,18 @@ fn desktop_lifecycle_close(
     choice: String,
 ) -> std::result::Result<(), String> {
     shell.close(&app, &choice)
+}
+
+#[tauri::command]
+fn autostart_status(app: tauri::AppHandle) -> std::result::Result<autostart::Status, String> {
+    autostart::status(&app)
+}
+#[tauri::command]
+fn autostart_set(
+    app: tauri::AppHandle,
+    enabled: bool,
+) -> std::result::Result<autostart::Status, String> {
+    autostart::set(&app, enabled)
 }
 
 #[derive(Serialize)]
@@ -321,10 +334,13 @@ pub fn run() {
             );
             app.manage(smart);
             app.manage(desktop_lifecycle::DesktopLifecycle::setup(app.handle()));
+            desktop_lifecycle::startup(app.handle());
             Ok(())
         })
         .on_window_event(desktop_lifecycle::on_window_event)
         .invoke_handler(tauri::generate_handler![
+            autostart_status,
+            autostart_set,
             desktop_lifecycle_status,
             desktop_lifecycle_language,
             desktop_lifecycle_close,

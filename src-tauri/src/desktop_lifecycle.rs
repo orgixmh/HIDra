@@ -121,6 +121,33 @@ impl DesktopLifecycle {
     }
 }
 
+pub fn startup(app: &AppHandle) {
+    let tray_mode = std::env::args_os()
+        .skip(1)
+        .any(|arg| arg == "--tray" || arg == "--tray-mode");
+    if !tray_mode {
+        show_window(app);
+        return;
+    }
+    // All windows start hidden in config, preventing a startup flash. At login,
+    // the desktop's tray host may arrive after this application, so allow it time.
+    let app = app.clone();
+    std::thread::spawn(move || {
+        for _ in 0..20 {
+            if !app.state::<DesktopLifecycle>().ready {
+                show_window(&app);
+                return;
+            }
+            if tray_host_available() {
+                return;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        }
+        // Never leave the user with an inaccessible hidden application.
+        show_window(&app);
+    });
+}
+
 pub fn on_window_event(window: &Window, event: &WindowEvent) {
     if window.label() != "main" {
         return;

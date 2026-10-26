@@ -128,6 +128,23 @@ temporários usam uma conexão HID aberta; o quadro de fundo ocioso exige atuali
 periódica, sem redescoberta nem leitura repetida da configuração. Outros dispositivos
 e plataformas ainda não oferecem este modo.
 
+### Configurações e inicialização automática
+
+O botão **Configurações** na lateral contém Idioma e **Iniciar o HIDra automaticamente
+ao entrar na sessão**. No Linux, ativar registra o executável no diretório XDG
+autostart do usuário com `--tray`; desativar remove a entrada. Vale para o próximo
+login e não exige root nem serviço. O Smart Notifications preserva sua própria
+preferência e só é retomado se estava ativo. AppImages registram o arquivo original,
+não a montagem temporária. Mantenha o executável no caminho registrado ou
+desative/ative novamente após movê-lo.
+
+`hidra --tray` (ou `--tray-mode`) inicia sem mostrar a janela principal; sem esse
+argumento, a janela aparece normalmente. Não há janela piscando antes de ocultar.
+Se a bandeja ainda não estiver disponível no login, o HIDra aguarda brevemente e
+mostra a janela como alternativa. Use **Mostrar HIDra** no ícone para reabri-la.
+A inicialização automática fica indisponível em versões com servidor de
+desenvolvimento; use uma versão independente que não dependa do Vite.
+
 ## Instalação
 
 Baixe o instalador do seu sistema na

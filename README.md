@@ -136,6 +136,23 @@ its idle background frame needs periodic refreshes, without repeated device disc
 or configuration reads. Other devices/platforms currently show this mode as
 unsupported.
 
+### Settings and login startup
+
+The sidebar **Settings** button contains Language and **Start HIDra automatically
+when I sign in**. On Linux, enabling it registers this executable in the user's
+XDG autostart directory with `--tray`; disabling removes that entry. It takes
+effect at the next desktop login and needs no root or background service.
+Smart Notifications keeps its own On/Off preference and resumes only if enabled.
+AppImages register their original AppImage path rather than the temporary mount.
+Keep the executable at the registered path, or disable/re-enable after moving it.
+
+`hidra --tray` (alias `--tray-mode`) starts without showing the main window;
+launching without that argument shows it normally. No window is flashed before
+hiding. If the tray host is unavailable at login, HIDra waits briefly for it and
+then shows the window as a fallback. Use the tray menu's **Show HIDra** to open it.
+Automatic startup is unavailable in development-server builds; use a standalone
+build so startup does not depend on Vite running.
+
 ## Install
 
 Grab the installer for your system from the

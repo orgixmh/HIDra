@@ -1321,3 +1321,11 @@
 .close-dialog__actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 24px; }
 .close-dialog__exit { color: #ff8c92; }
 .close-dialog:focus { outline: none; }
+
+.settings-button { display: flex; align-items: center; justify-content: center; gap: 9px; width: 100%; }
+.settings-dialog .language-setting { margin: 22px 0; }
+.settings-startup { border-top: 1px solid var(--border-strong); padding-top: 20px; }
+.settings-startup h3 { margin: 0 0 16px; font-size: 14px; color: var(--text-strong); }
+.settings-checkbox { display: flex; align-items: flex-start; gap: 11px; font-size: 14px; line-height: 1.5; cursor: pointer; margin-bottom: 12px; }
+.settings-checkbox input { width: 17px; height: 17px; margin: 2px 0 0; flex: none; accent-color: var(--accent); }
+.settings-checkbox:has(input:disabled) { opacity: .55; cursor: default; }

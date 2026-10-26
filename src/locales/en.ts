@@ -331,5 +331,16 @@ export const en = {
   "Show HIDra": "Show HIDra",
   "Keep in top bar": "Keep in top bar",
   "HIDra window is unavailable": "HIDra window is unavailable",
-  "Unknown close action": "Unknown close action"
+  "Unknown close action": "Unknown close action",
+  "Settings": "Settings",
+  "Startup": "Startup",
+  "Start HIDra automatically when I sign in": "Start HIDra automatically when I sign in",
+  "HIDra will start in the top bar without opening the main window. Smart Notifications resumes if it was left on.": "HIDra will start in the top bar without opening the main window. Smart Notifications resumes if it was left on.",
+  "Loading startup settings…": "Loading startup settings…",
+  "Automatic startup is available in the desktop app.": "Automatic startup is available in the desktop app.",
+  "Automatic startup requires a standalone HIDra build, not the development server.": "Automatic startup requires a standalone HIDra build, not the development server.",
+  "Automatic startup is currently available on Linux.": "Automatic startup is currently available on Linux.",
+  "Application path cannot be used for automatic startup": "Application path cannot be used for automatic startup",
+  "Invalid startup directory": "Invalid startup directory",
+  "Done": "Done"
 } as const;
