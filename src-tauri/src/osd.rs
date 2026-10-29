@@ -268,7 +268,12 @@ fn passive_window(app: &AppHandle, shared: &Mutex<Shared>) -> Result<WebviewWind
         .inner_size(280.0, 100.0)
         .visible(false)
         .decorations(false)
-        .resizable(false)
+        // GTK's non-resizable mode sizes the window from WebKit's natural
+        // requisition (200px high), overriding smaller requested dimensions.
+        // Allow GTK's resize path; equal min/max constraints keep the OSD fixed.
+        .resizable(cfg!(target_os = "linux"))
+        .min_inner_size(280.0, 100.0)
+        .max_inner_size(280.0, 100.0)
         .focused(false)
         .focusable(false)
         .always_on_top(true)

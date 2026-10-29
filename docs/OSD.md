@@ -55,8 +55,11 @@ leaves the window hidden and reports an error rather than showing an interactive
 window over the user's work. On Linux, the hidden GTK window is realized on the
 main thread before installing click-through: Tao otherwise panics when it tries
 to access the absent GDK window. Realization does not show or focus the overlay.
-The native geometry limits match the requested viewport, preventing GTK from
-retaining a larger natural WebKit height for a non-resizable window. The overlay has isolated CSS and
+The native minimum and maximum geometry limits both match the requested viewport.
+On Linux, GTK's resizable mode stays enabled internally: its non-resizable mode
+uses WebKit's natural height (200px) even when a smaller height is requested.
+Equal geometry limits still prevent user resizing while letting GTK apply the
+configured height. Other platforms retain their non-resizable window mode. The overlay has isolated CSS and
 its frame fits the viewport without adding padding outside the requested size.
 No CSS/SVG filters are used.
 
