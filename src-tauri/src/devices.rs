@@ -92,7 +92,53 @@ pub struct Device {
     pub support: Support,
     /// Model identity and layout for protocols whose USB ID is shared.
     pub sinowealth: Option<&'static SinowealthSpec>,
+    pub custom_wheel: Option<&'static CustomWheelSpec>,
 }
+
+/// A Linux input capability required when locating the wheel's event device.
+#[derive(Clone, Copy, Debug, Serialize)]
+pub struct InputCapability {
+    pub event_type: u16,
+    pub code: u16,
+}
+
+/// Input identity is separate from the vendor HID configuration endpoint.
+/// Future input discovery must match all required capabilities, never eventN paths.
+#[derive(Debug, Serialize)]
+pub struct CustomWheelSpec {
+    pub vendor_id: u16,
+    pub product_id: u16,
+    pub name: Option<&'static str>,
+    pub bus_type: Option<u16>,
+    pub required_capabilities: &'static [InputCapability],
+    pub clockwise_keycode: u16,
+    pub counterclockwise_keycode: u16,
+    pub press_keycode: u16,
+}
+
+const K673SP_RF_WHEEL: CustomWheelSpec = CustomWheelSpec {
+    vendor_id: 0x3554,
+    product_id: 0xfa09,
+    name: Some("CX 2.4G Wireless Receiver Consumer Control"),
+    bus_type: Some(0x0003),
+    required_capabilities: &[
+        InputCapability {
+            event_type: 0x01,
+            code: 115,
+        }, // EV_KEY / KEY_VOLUMEUP
+        InputCapability {
+            event_type: 0x01,
+            code: 114,
+        }, // EV_KEY / KEY_VOLUMEDOWN
+        InputCapability {
+            event_type: 0x01,
+            code: 113,
+        }, // EV_KEY / KEY_MUTE
+    ],
+    clockwise_keycode: 115,
+    counterclockwise_keycode: 114,
+    press_keycode: 113,
+};
 
 /// Every device HIDra recognises.
 pub const SUPPORTED: &[Device] = &[
@@ -110,6 +156,7 @@ pub const SUPPORTED: &[Device] = &[
         connection: Connection::Receiver,
         support: Support::Verified,
         sinowealth: None,
+        custom_wheel: None,
     },
     Device {
         vendor: "Redragon",
@@ -124,6 +171,7 @@ pub const SUPPORTED: &[Device] = &[
         connection: Connection::Wired,
         support: Support::Verified,
         sinowealth: None,
+        custom_wheel: None,
     },
     // ---- Keyboards -----------------------------------------------------
     Device {
@@ -139,6 +187,7 @@ pub const SUPPORTED: &[Device] = &[
         connection: Connection::Wired,
         support: Support::Verified,
         sinowealth: None,
+        custom_wheel: None,
     },
     Device {
         vendor: "Redragon",
@@ -153,6 +202,7 @@ pub const SUPPORTED: &[Device] = &[
         connection: Connection::Wired,
         support: Support::Verified,
         sinowealth: Some(&K673SP),
+        custom_wheel: None,
     },
     Device {
         vendor: "Redragon",
@@ -167,6 +217,7 @@ pub const SUPPORTED: &[Device] = &[
         connection: Connection::Receiver,
         support: Support::Reported,
         sinowealth: Some(&K673SP_RF),
+        custom_wheel: Some(&K673SP_RF_WHEEL),
     },
 ];
 

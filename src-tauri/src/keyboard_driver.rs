@@ -18,6 +18,7 @@ pub struct Capabilities {
     pub remap: bool,
     pub per_key: bool,
     pub smart_notifications: bool,
+    pub custom_wheel: Option<crate::custom_wheel::Capability>,
     pub brightness_max: u8,
     pub speed_min: u8,
     pub speed_max: u8,
@@ -30,6 +31,7 @@ pub fn capabilities(api: &HidApi) -> Option<Capabilities> {
     let found = hid::find(api, Kind::Keyboard)?;
     if let Some(spec) = found.device.sinowealth {
         Some(Capabilities {
+            custom_wheel: crate::custom_wheel::capability(found.device),
             profiles: 1,
             remap: false,
             per_key: found.device.protocol == Protocol::Sinowealth520,
@@ -43,6 +45,7 @@ pub fn capabilities(api: &HidApi) -> Option<Capabilities> {
         })
     } else {
         Some(Capabilities {
+            custom_wheel: crate::custom_wheel::capability(found.device),
             profiles: 3,
             remap: true,
             per_key: true,

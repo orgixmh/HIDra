@@ -113,6 +113,7 @@ export interface KeyboardCapabilities {
   remap: boolean;
   per_key: boolean;
   smart_notifications?: boolean;
+  custom_wheel?: CustomWheelCapability | null;
   brightness_max: number;
   speed_min: number;
   speed_max: number;
@@ -154,4 +155,28 @@ export interface SmartView {
   lit_keys: number[];
   scripts: { id: string; running: boolean; last_exit: number | null; error: string | null }[];
   metrics: SystemMetrics;
+}
+
+export interface CustomWheelCapability {
+  settings_key: string;
+  input: {
+    vendor_id: number;
+    product_id: number;
+    name: string | null;
+    bus_type: number | null;
+    required_capabilities: { event_type: number; code: number }[];
+    clockwise_keycode: number;
+    counterclockwise_keycode: number;
+    press_keycode: number;
+  };
+}
+export type WheelMode = "volume" | "brightness" | "zoom";
+export interface CustomWheelPreferences {
+  enabled: boolean;
+  modes: WheelMode[];
+  show_osd: boolean;
+}
+export interface CustomWheelView {
+  preferences: CustomWheelPreferences;
+  error: string | null;
 }

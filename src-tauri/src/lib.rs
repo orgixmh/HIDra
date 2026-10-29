@@ -5,6 +5,7 @@
 mod autostart;
 mod calibration;
 mod compx_keyboard;
+mod custom_wheel;
 mod desktop_lifecycle;
 mod desktop_notifications;
 mod devices;
@@ -267,6 +268,23 @@ fn mouse_set_button(app: State<App>, index: usize, action: mouse::Action) -> Res
     with_api(&app, |api| mouse::set_button(api, index, action))
 }
 
+// Preferences only: no HID or input device access, including while Smart owns lighting.
+#[tauri::command(rename_all = "snake_case")]
+fn custom_wheel_get(
+    store: State<custom_wheel::Store>,
+    device_key: String,
+) -> std::result::Result<custom_wheel::View, String> {
+    store.get(&device_key)
+}
+#[tauri::command(rename_all = "snake_case")]
+fn custom_wheel_save(
+    store: State<custom_wheel::Store>,
+    device_key: String,
+    preferences: custom_wheel::Preferences,
+) -> std::result::Result<custom_wheel::View, String> {
+    store.save(&device_key, preferences)
+}
+
 // ---- Keyboard commands -------------------------------------------------
 
 #[tauri::command]
@@ -410,6 +428,7 @@ pub fn run() {
         .setup(move |app| {
             let directory = app.path().app_config_dir()?;
             calibration::init(directory.clone());
+            app.manage(custom_wheel::Store::load(directory.clone()));
             app.manage(osd::Osd::start(app.handle().clone(), directory.clone()));
             let smart = smart_notifications::SmartNotifications::start(
                 app.handle().clone(),
@@ -449,6 +468,8 @@ pub fn run() {
             mouse_set_polling,
             mouse_set_button,
             keyboard_read_state,
+            custom_wheel_get,
+            custom_wheel_save,
             keyboard_calibration_get,
             keyboard_calibration_save,
             keyboard_effects,

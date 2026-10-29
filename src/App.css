@@ -1396,3 +1396,14 @@
 .osd-settings-grid .field { min-width: 0; }
 .osd-settings-grid .input { width: 100%; }
 @media (max-width: 480px) { .osd-settings-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.custom-wheel__heading { font-size: 14px; margin: 22px 0 10px; }
+.custom-wheel__modes { display: grid; gap: 10px; margin: 14px 0 20px; }
+.custom-wheel__mode { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; background: var(--panel-2); }
+.custom-wheel__mode .btnrow { margin: 0; }
+.custom-wheel__gestures { display: grid; grid-template-columns: minmax(100px, .4fr) minmax(0, 1fr); gap: 12px 20px; margin: 16px 0; }
+.custom-wheel__gestures dt { color: var(--text-strong); font-weight: 500; }
+.custom-wheel__gestures dd { margin: 0; color: var(--muted); }
+.custom-wheel__preview { display: flex; align-items: flex-end; flex-wrap: wrap; gap: 12px; margin-top: 16px; }
+.custom-wheel__preview .field { margin-bottom: 0; }
+.custom-wheel__preview .input { min-width: 180px; }

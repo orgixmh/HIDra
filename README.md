@@ -31,6 +31,8 @@ of operating system.
 > Not affiliated with, endorsed by, or sponsored by any hardware manufacturer.
 > Product names are used only to say which hardware is supported.
 
+Custom Wheel Phase 1 adds device-scoped wheel preferences and an OSD preview for supported registry entries. Input interception and remapping are deferred to Phase 2. See [Custom Wheel](docs/CUSTOM-WHEEL.md).
+
 ## Screenshots
 
 | Mouse | Keyboard |

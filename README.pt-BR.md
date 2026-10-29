@@ -24,6 +24,8 @@ funcionando independente do sistema que você usa.
 > Não é afiliado, endossado nem patrocinado por nenhum fabricante. Os nomes de
 > produtos aparecem apenas para dizer qual hardware é compatível.
 
+A Fase 1 da roda personalizada adiciona preferências por dispositivo e uma prévia do OSD para dispositivos compatíveis no registro. A interceptação de eventos e o remapeamento ficam para a Fase 2. Veja [Custom Wheel](docs/CUSTOM-WHEEL.md).
+
 ## Telas
 
 | Mouse | Teclado |
