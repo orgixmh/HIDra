@@ -47,7 +47,10 @@ Vite entry `osd.html` only renders the overlay and never mounts the main app or 
 HID hooks. It is transparent, undecorated, non-resizable, always on top, absent
 from the taskbar, non-focusable and click-through. Failure to enable click-through
 leaves the window hidden and reports an error rather than showing an interactive
-window over the user's work. No CSS/SVG filters are used.
+window over the user's work. On Linux, the hidden GTK window is realized on the
+main thread before installing click-through: Tao otherwise panics when it tries
+to access the absent GDK window. Realization does not show or focus the overlay.
+No CSS/SVG filters are used.
 
 One coalescing wake slot retains the most recent message. A sleeping worker owns
 one expiry deadline: replacement requests reset it, not another timer or window.

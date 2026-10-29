@@ -252,9 +252,7 @@ impl Osd {
 
 fn passive_window(app: &AppHandle, shared: &Mutex<Shared>) -> Result<WebviewWindow, String> {
     if let Some(window) = app.get_webview_window(LABEL) {
-        window
-            .set_ignore_cursor_events(true)
-            .map_err(|e| format!("OSD click-through is unavailable: {e}"))?;
+        enable_click_through(&window)?;
         return Ok(window);
     }
     shared.lock().ready_epoch = 0;
@@ -275,10 +273,43 @@ fn passive_window(app: &AppHandle, shared: &Mutex<Shared>) -> Result<WebviewWind
         .build()
         .map_err(|e| format!("OSD overlay is unavailable: {e}"))?;
     // Fail closed instead of putting an interactive window over the user's work.
+    enable_click_through(&window)?;
+    Ok(window)
+}
+
+fn enable_click_through(window: &WebviewWindow) -> Result<(), String> {
+    #[cfg(target_os = "linux")]
+    {
+        // Tao's CursorIgnoreEvents handler unwraps the GDK window. A newly
+        // created hidden GTK window has none until realized. Realize on the GTK
+        // thread without mapping/showing it, then install the passive input shape.
+        let target = window.clone();
+        let (sender, receiver) = mpsc::sync_channel(1);
+        window
+            .run_on_main_thread(move || {
+                use gtk::prelude::WidgetExt;
+                let result = (|| -> Result<(), String> {
+                    let native = target.gtk_window().map_err(|e| e.to_string())?;
+                    native.realize();
+                    if native.window().is_none() {
+                        return Err("GTK did not realize the OSD window".into());
+                    }
+                    target
+                        .set_ignore_cursor_events(true)
+                        .map_err(|e| e.to_string())
+                })();
+                let _ = sender.send(result);
+            })
+            .map_err(|e| format!("OSD click-through is unavailable: {e}"))?;
+        receiver
+            .recv_timeout(Duration::from_secs(5))
+            .map_err(|e| format!("OSD click-through is unavailable: {e}"))?
+            .map_err(|e| format!("OSD click-through is unavailable: {e}"))
+    }
+    #[cfg(not(target_os = "linux"))]
     window
         .set_ignore_cursor_events(true)
-        .map_err(|e| format!("OSD click-through is unavailable: {e}"))?;
-    Ok(window)
+        .map_err(|e| format!("OSD click-through is unavailable: {e}"))
 }
 
 fn place(app: &AppHandle, window: &WebviewWindow, settings: &Settings) -> Result<(), String> {
