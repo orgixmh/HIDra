@@ -14,6 +14,7 @@ mod keyboard;
 mod keyboard_driver;
 mod mouse;
 mod notification_lighting;
+pub mod osd;
 mod script_notifications;
 mod sinowealth;
 mod smart_notifications;
@@ -48,6 +49,45 @@ fn with_keyboard_api<T>(app: &App, f: impl FnOnce(&HidApi) -> Result<T>) -> Resu
         ));
     }
     with_api(app, f)
+}
+
+#[tauri::command]
+fn osd_settings(osd: State<osd::Osd>) -> osd::View {
+    osd.get()
+}
+#[tauri::command]
+fn osd_save_settings(
+    osd: State<osd::Osd>,
+    settings: osd::Settings,
+) -> std::result::Result<osd::View, String> {
+    osd.save(settings)
+}
+#[tauri::command]
+fn osd_show(osd: State<osd::Osd>, message: osd::Message) -> std::result::Result<bool, String> {
+    osd.show(message)
+}
+#[tauri::command]
+fn osd_ready(
+    window: tauri::WebviewWindow,
+    osd: State<osd::Osd>,
+) -> std::result::Result<(), String> {
+    if window.label() != osd::LABEL {
+        return Err("Only the OSD window can acknowledge rendering".into());
+    }
+    osd.ready();
+    Ok(())
+}
+#[tauri::command]
+fn osd_rendered(
+    window: tauri::WebviewWindow,
+    osd: State<osd::Osd>,
+    id: u64,
+) -> std::result::Result<(), String> {
+    if window.label() != osd::LABEL {
+        return Err("Only the OSD window can acknowledge rendering".into());
+    }
+    osd.rendered(id);
+    Ok(())
 }
 
 #[tauri::command]
@@ -370,6 +410,7 @@ pub fn run() {
         .setup(move |app| {
             let directory = app.path().app_config_dir()?;
             calibration::init(directory.clone());
+            app.manage(osd::Osd::start(app.handle().clone(), directory.clone()));
             let smart = smart_notifications::SmartNotifications::start(
                 app.handle().clone(),
                 directory,
@@ -382,6 +423,11 @@ pub fn run() {
         })
         .on_window_event(desktop_lifecycle::on_window_event)
         .invoke_handler(tauri::generate_handler![
+            osd_settings,
+            osd_save_settings,
+            osd_show,
+            osd_ready,
+            osd_rendered,
             autostart_status,
             autostart_set,
             desktop_lifecycle_status,
@@ -424,6 +470,9 @@ pub fn run() {
         .expect("erro ao executar a aplicação Tauri")
         .run(|app, event| {
             if let tauri::RunEvent::ExitRequested { .. } = event {
+                if let Some(osd) = app.try_state::<osd::Osd>() {
+                    osd.shutdown();
+                }
                 if let Some(smart) = app.try_state::<smart_notifications::SmartNotifications>() {
                     smart.shutdown();
                 }

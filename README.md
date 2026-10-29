@@ -379,3 +379,15 @@ the last 120 seconds and a stop marker. It passively records vendor report 0x13,
 transfer completions/errors and receiver disconnect/reconnect events; it does not
 send HID commands or retain typed-key reports. This observes the USB channel to
 the receiver, not the over-air radio link. The file is owned by the invoking user.
+
+### On-Screen Display (OSD)
+
+Global **Settings → On-Screen Display (OSD)** controls short, passive overlays.
+The reusable overlay works while the main window is hidden in the tray, without
+opening it or taking focus. Configure enable/disable, duration, text size, width,
+height, position and edge margin; **Preview OSD** saves and uses the actual overlay.
+Each message appears on the pointer's monitor, constrained to that monitor's
+work area and scale. A new message replaces the previous one and restarts its
+expiry; no input daemon, GNOME extension or external OSD program is involved.
+This phase provides only the service and preview, with no wheel/remap consumers.
+See [the OSD API and implementation notes](docs/OSD.md).

@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { callBackend, isTauri } from "../backend";
 import { useTranslation } from "../i18n";
+import { OSDSettings } from "./OSDSettings";
 import { LanguageSelect } from "./LanguageSelect";
 
 type StartupStatus = { enabled: boolean; supported: boolean; reason: string | null };
@@ -56,6 +57,7 @@ export function Settings() {
         {status?.reason && <p className="note">{t(status.reason)}</p>}
         {error && <p className="smart-error" role="alert">{t(error)}</p>}
       </section>
+      {open && <OSDSettings open={open} />}
       <div className="close-dialog__actions"><button className="btn btn--primary" type="button" disabled={busy} onClick={() => setOpen(false)}>{t("Done")}</button></div>
     </dialog>
   </>;

@@ -169,6 +169,11 @@ pub fn on_window_event(window: &Window, event: &WindowEvent) {
             shell.pending.store(true, Ordering::Release);
             show_window(app);
             let _ = app.emit(CLOSE_EVENT, shell.status());
+        } else {
+            // The reusable OSD may still own a hidden webview. Closing main must
+            // retain the usual Exit behavior rather than orphaning that window.
+            api.prevent_close();
+            exit_app(app);
         }
     }
 }

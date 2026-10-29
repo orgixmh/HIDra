@@ -376,3 +376,14 @@ que a falha aparecer. O script informa o arquivo `/tmp/hidra-rf-*.jsonl` com os
 0x13, conclusões/erros de transferência e desconexões/reconexões do receptor; não
 envia comandos HID nem salva teclas digitadas. A captura observa o canal USB até
 o receptor, não o enlace de rádio. O arquivo pertence ao usuário que o executou.
+
+### Exibição na tela (OSD)
+
+**Configurações → Exibição na tela (OSD)** controla mensagens curtas e passivas.
+O overlay funciona com a janela principal oculta na bandeja, sem abri-la nem
+roubar o foco. Configure ativação, duração, tamanho do texto, largura, altura,
+posição e margem; **Prévia do OSD** salva e usa o overlay real. Cada mensagem
+aparece no monitor do ponteiro, limitada à área de trabalho e à escala do monitor.
+Uma nova mensagem substitui a anterior e reinicia o prazo. Não há daemon de entrada,
+extensão GNOME nem programa OSD externo. Esta fase oferece apenas o serviço e a
+prévia, sem remapeamento ou funções da roda. Veja [a documentação da API](docs/OSD.md).
