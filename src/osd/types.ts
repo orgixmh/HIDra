@@ -7,6 +7,8 @@ export interface OSDSettings {
   textSize: number;
   duration: number;
   edgeMargin: number;
+  backgroundColor: [number, number, number];
+  transparency: number;
 }
 export interface OSDMessage {
   text: string;
@@ -21,6 +23,7 @@ export interface OSDSettingsView { settings: OSDSettings; error: string | null }
 export interface OSDDisplay { id: number; text: string; icon?: string | null; textSize: number; settings: OSDSettings }
 export const DEFAULT_OSD_SETTINGS: OSDSettings = {
   enabled: true, position: "bottom", width: 280, height: 100, textSize: 16, duration: 1500, edgeMargin: 32,
+  backgroundColor: [30, 32, 36], transparency: 4,
 };
 export const OSD_POSITIONS: { value: OSDPosition; label: string }[] = [
   { value: "top", label: "Top" }, { value: "bottom", label: "Bottom" },
@@ -29,7 +32,8 @@ export const OSD_POSITIONS: { value: OSDPosition; label: string }[] = [
 ];
 export function validOSDSettings(settings: OSDSettings): boolean {
   return Number.isInteger(settings.duration) && settings.duration >= 100 && settings.duration <= 30000 &&
-    [[settings.width, 120, 1200], [settings.height, 64, 600], [settings.textSize, 10, 48], [settings.edgeMargin, 0, 256]]
+    [[settings.width, 120, 1200], [settings.height, 64, 600], [settings.textSize, 10, 48], [settings.edgeMargin, 0, 256], [settings.transparency, 0, 100]]
       .every(([value, min, max]) => Number.isFinite(value) && value >= min && value <= max) &&
+    settings.backgroundColor.length === 3 && settings.backgroundColor.every((value) => Number.isInteger(value) && value >= 0 && value <= 255) &&
     OSD_POSITIONS.some(({ value }) => value === settings.position);
 }

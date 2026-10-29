@@ -42,6 +42,8 @@ pub struct Settings {
     pub text_size: f64,
     pub duration: u64,
     pub edge_margin: f64,
+    pub background_color: [u8; 3],
+    pub transparency: f64,
 }
 impl Default for Settings {
     fn default() -> Self {
@@ -53,6 +55,8 @@ impl Default for Settings {
             text_size: 16.0,
             duration: 1500,
             edge_margin: 32.0,
+            background_color: [30, 32, 36],
+            transparency: 4.0,
         }
     }
 }
@@ -67,6 +71,9 @@ impl Settings {
             if !value.is_finite() || !(min..=max).contains(&value) {
                 return Err("Invalid OSD dimensions, text size or edge margin".into());
             }
+        }
+        if !self.transparency.is_finite() || !(0.0..=100.0).contains(&self.transparency) {
+            return Err("OSD transparency must be between 0 and 100 percent".into());
         }
         if !(100..=30000).contains(&self.duration) {
             return Err("OSD duration must be between 100 and 30000 milliseconds".into());
@@ -354,6 +361,16 @@ fn place(app: &AppHandle, window: &WebviewWindow, settings: &Settings) -> Result
     };
     window
         .set_position(PhysicalPosition::new(x as i32, y as i32))
+        .map_err(|e| e.to_string())?;
+    // Match both geometry limits to the requested viewport. GTK can otherwise
+    // keep the natural WebKit height for a non-resizable window, ignoring resize.
+    window
+        .set_size_constraints(tauri::WindowSizeConstraints {
+            min_width: Some(tauri::PhysicalUnit(width).into()),
+            max_width: Some(tauri::PhysicalUnit(width).into()),
+            min_height: Some(tauri::PhysicalUnit(height).into()),
+            max_height: Some(tauri::PhysicalUnit(height).into()),
+        })
         .map_err(|e| e.to_string())?;
     window
         .set_size(PhysicalSize::new(width, height))

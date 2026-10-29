@@ -7,6 +7,7 @@ import { DEFAULT_OSD_SETTINGS, OSD_POSITIONS, validOSDSettings } from "../osd/ty
 import type { OSDSettings as Config, OSDPosition } from "../osd/types";
 import { Field } from "./ui/Panel";
 import { Toggle } from "./ui/Toggle";
+import { ColorPicker } from "./ui/ColorPicker";
 
 const fields = [
   { key: "duration", label: "Display duration (ms)", min: 100, max: 30000 },
@@ -14,6 +15,7 @@ const fields = [
   { key: "width", label: "Width (px)", min: 120, max: 1200 },
   { key: "height", label: "Height (px)", min: 64, max: 600 },
   { key: "edgeMargin", label: "Edge margin (px)", min: 0, max: 256 },
+  { key: "transparency", label: "Background transparency (%)", min: 0, max: 100 },
 ] as const;
 
 export function OSDSettings({ open }: { open: boolean }) {
@@ -82,6 +84,11 @@ export function OSDSettings({ open }: { open: boolean }) {
           disabled={!desktop || !saved || busy} onChange={(event) => setDraft({ ...draft, [key]: Number(event.target.value) })} />
       </Field>)}
     </div>
+    <Field label={t("Background colour")}>
+      <ColorPicker value={draft.backgroundColor} disabled={!desktop || !saved || busy}
+        onChange={(backgroundColor) => setDraft({ ...draft, backgroundColor })} />
+    </Field>
+    <p className="note">{t("0% is opaque; 100% is fully transparent. Text and icons stay opaque.")}</p>
     <p className="note">{t("The OSD appears on the monitor containing the pointer. Preview also saves your current settings.")}</p>
     <div className="btnrow">
       <button className="btn" type="button" disabled={!desktop || !saved || busy || !dirty || !valid}

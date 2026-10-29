@@ -409,5 +409,8 @@ export const ptBR = {
   "OSD monitor information is unavailable": "As informações dos monitores não estão disponíveis para o OSD",
   "OSD monitor has no visible work area": "O monitor do OSD não possui área visível",
   "OSD monitor scaling is unavailable": "A escala do monitor não está disponível para o OSD",
-  "OSD renderer did not become ready": "A janela do OSD não ficou pronta para exibição"
+  "OSD renderer did not become ready": "A janela do OSD não ficou pronta para exibição",
+  "Background transparency (%)": "Transparência do fundo (%)",
+  "0% is opaque; 100% is fully transparent. Text and icons stay opaque.": "0% é opaco; 100% é totalmente transparente. Texto e ícones permanecem opacos.",
+  "OSD transparency must be between 0 and 100 percent": "A transparência do OSD deve estar entre 0 e 100 por cento"
 } satisfies Record<keyof typeof en, string>;

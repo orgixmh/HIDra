@@ -407,5 +407,8 @@ export const en = {
   "OSD monitor information is unavailable": "OSD monitor information is unavailable",
   "OSD monitor has no visible work area": "OSD monitor has no visible work area",
   "OSD monitor scaling is unavailable": "OSD monitor scaling is unavailable",
-  "OSD renderer did not become ready": "OSD renderer did not become ready"
+  "OSD renderer did not become ready": "OSD renderer did not become ready",
+  "Background transparency (%)": "Background transparency (%)",
+  "0% is opaque; 100% is fully transparent. Text and icons stay opaque.": "0% is opaque; 100% is fully transparent. Text and icons stay opaque.",
+  "OSD transparency must be between 0 and 100 percent": "OSD transparency must be between 0 and 100 percent"
 } as const;

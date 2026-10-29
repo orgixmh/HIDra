@@ -34,7 +34,12 @@ content, capped at 2048 Unicode characters, wrapped and clipped to three lines.
 
 Preferences live in the existing app config directory as `osd-settings.json`,
 written atomically. Defaults: enabled, bottom, 280×100 logical pixels, 16px text,
-1500ms duration, 32px margin. Limits: width 120–1200px, height 64–600px, text
+1500ms duration, 32px margin, dark RGB (30,32,36) background and 4% transparency.
+Background colour uses the custom RGB/HEX palette; transparency accepts 0–100%
+(0 is opaque, 100 is invisible background). Only the background uses alpha;
+text/icons remain opaque and choose dark/light foreground from the background
+luminance. Existing settings files retain their values and load these appearance
+defaults for missing fields. Limits: width 120–1200px, height 64–600px, text
 10–48px, duration 100–30000ms, margin 0–256px. Invalid files fall back to defaults
 and show their load error; explicit Save repairs preferences. Overrides do not
 modify persisted settings. Disabling hides any existing message immediately.
@@ -50,6 +55,9 @@ leaves the window hidden and reports an error rather than showing an interactive
 window over the user's work. On Linux, the hidden GTK window is realized on the
 main thread before installing click-through: Tao otherwise panics when it tries
 to access the absent GDK window. Realization does not show or focus the overlay.
+The native geometry limits match the requested viewport, preventing GTK from
+retaining a larger natural WebKit height for a non-resizable window. The overlay has isolated CSS and
+its frame fits the viewport without adding padding outside the requested size.
 No CSS/SVG filters are used.
 
 One coalescing wake slot retains the most recent message. A sleeping worker owns

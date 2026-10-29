@@ -41,7 +41,13 @@ export function Overlay() {
     if (display) void invoke("osd_rendered", { id: display.id }).catch((error: unknown) => console.error("OSD render acknowledgement failed", error));
   }, [display]);
   if (!display) return null;
-  return <div className="osd-frame" role="status" aria-live="polite" aria-atomic="true">
+  const [r, g, b] = display.settings.backgroundColor;
+  const alpha = 1 - display.settings.transparency / 100;
+  const luminance = [r, g, b].map((channel) => {
+    const value = channel / 255;
+    return value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4;
+  }).reduce((sum, value, index) => sum + value * [0.2126, 0.7152, 0.0722][index], 0);
+  return <div className="osd-frame" style={{ backgroundColor: `rgba(${r}, ${g}, ${b}, ${alpha})`, color: luminance > 0.179 ? "#111318" : "#f8f8fa" }} role="status" aria-live="polite" aria-atomic="true">
     <Icon name={display.icon} />
     <span className="osd-text" style={{ fontSize: display.textSize }}>{display.text}</span>
   </div>;
