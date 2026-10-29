@@ -377,5 +377,9 @@ export const ptBR = {
   "RAM monitoring": "Monitoramento de RAM",
   "Disk space (/)": "Espaço em disco (/)",
   "Turn on Smart Notifications to display system usage on your keyboard.": "Ative o Smart Notifications para mostrar o uso do sistema no teclado.",
-  "System monitoring is available on Linux.": "O monitoramento do sistema está disponível no Linux."
+  "System monitoring is available on Linux.": "O monitoramento do sistema está disponível no Linux.",
+  "Display mode": "Modo de exibição",
+  "Single key": "Tecla única",
+  "Bar": "Barra",
+  "Choose a single key or a filled bar for each row. Above 90% blinks. Notifications take priority over monitoring keys.": "Escolha uma tecla única ou uma barra preenchida para cada linha. Acima de 90%, pisca. As notificações têm prioridade sobre o monitoramento."
 } satisfies Record<keyof typeof en, string>;

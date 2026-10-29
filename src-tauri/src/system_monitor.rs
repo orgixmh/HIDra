@@ -9,12 +9,14 @@ use std::time::{Duration, Instant};
 pub struct Meter {
     pub enabled: bool,
     pub color: [u8; 3],
+    pub bar: bool,
 }
 impl Default for Meter {
     fn default() -> Self {
         Self {
             enabled: false,
             color: [0, 190, 255],
+            bar: false,
         }
     }
 }
@@ -134,7 +136,7 @@ impl Sampler {
     }
 }
 
-/// One moving LED per configured row: 0–4% dark, 5–15% first, 16–25% second,
+/// A moving LED or a filled bar per configured row: 0–4% dark, 5–15% first, 16–25% second,
 /// ... 96–100% tenth. Monitoring sits below notification alerts in composition.
 pub fn cells(
     spec: &SinowealthSpec,
@@ -163,8 +165,11 @@ pub fn cells(
             continue;
         }
         let index = (rounded.saturating_sub(6) / 10).min(row.len() - 1);
-        if let Some(key) = spec.keys.iter().find(|key| key.label == row[index]) {
-            cells.push((key.off, meter.color));
+        let first = if meter.bar { 0 } else { index };
+        for label in &row[first..=index] {
+            if let Some(key) = spec.keys.iter().find(|key| key.label == *label) {
+                cells.push((key.off, meter.color));
+            }
         }
     }
     cells

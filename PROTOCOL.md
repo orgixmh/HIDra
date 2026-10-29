@@ -399,9 +399,12 @@ Disk uses statvfs("/"): used/(used+available-to-user), matching df's usable-spac
 percentage. It measures space, not I/O activity; other mount points are not read.
 
 A model's three ten-key rows live only in devices.rs. K673SP uses Q–P, A–;,
-and Z–/. Each rounded percentage selects one moving key: 0–4% leaves background,
+and Z–/. Each rounded percentage selects a position: 0–4% leaves background,
 5–15% selects the first, 16–25% the second, through 96–100% the tenth. Raw usage
-strictly above 90% blinks that key with 700ms phases on the existing frame tick.
+strictly above 90% blinks the indicator with 700ms phases on the existing frame
+tick. Each meter persists an optional bar flag (old preferences default false).
+Single mode colours just the selected position; bar mode colours positions zero
+through that position, inclusive. The same blink gate covers the entire bar.
 Composition is background < monitoring < notifications; alerts own their keys
 through their own off phase. Calibration runs after composition. Sampling errors
 show per-meter errors and leave that meter at background, never stale values.

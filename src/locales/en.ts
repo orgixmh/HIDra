@@ -375,5 +375,9 @@ export const en = {
   "RAM monitoring": "RAM monitoring",
   "Disk space (/)": "Disk space (/)",
   "Turn on Smart Notifications to display system usage on your keyboard.": "Turn on Smart Notifications to display system usage on your keyboard.",
-  "System monitoring is available on Linux.": "System monitoring is available on Linux."
+  "System monitoring is available on Linux.": "System monitoring is available on Linux.",
+  "Display mode": "Display mode",
+  "Single key": "Single key",
+  "Bar": "Bar",
+  "Choose a single key or a filled bar for each row. Above 90% blinks. Notifications take priority over monitoring keys.": "Choose a single key or a filled bar for each row. Above 90% blinks. Notifications take priority over monitoring keys."
 } as const;

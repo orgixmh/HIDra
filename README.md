@@ -360,9 +360,12 @@ colours after changing calibration. Built-in rainbow colours are not corrected.
 ### System monitoring in Smart Notifications
 
 Enable CPU, RAM and/or **Disk space (/)** with a separate colour for each meter.
-The K673SP shows one moving key on Q–P (CPU), A–; (RAM), and Z–/ (disk). The
+The K673SP uses Q–P (CPU), A–; (RAM), and Z–/ (disk). Choose **Single key**
+(the default) or **Bar** separately for each meter. Bar lights every key from
+the start of the row through the current position (50% CPU: Q/W/E/R/T). The
 first key represents 5–15%, the second 16–25%, through 96–100% at the last key;
-below 5% the row stays at its background. Above 90% the indicator blinks.
+below 5% the row stays at its background. Above 90% the active key or whole
+filled bar blinks.
 Disk means used space on the root filesystem. Live Linux readings update about
 once per second while Smart is on; notifications take priority on overlapping
 keys, and RGB calibration applies to the monitoring colours too.

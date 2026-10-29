@@ -356,9 +356,12 @@ de arco-íris internos não são corrigidas.
 ### Monitoramento do sistema no Smart Notifications
 
 Ative CPU, RAM e/ou **Espaço em disco (/)** e escolha uma cor para cada medidor.
-O K673SP usa uma tecla móvel nas linhas Q–P (CPU), A–; (RAM) e Z–/ (disco).
+O K673SP usa as linhas Q–P (CPU), A–; (RAM) e Z–/ (disco). Escolha **Tecla
+única** (padrão) ou **Barra** separadamente para cada medidor. A barra acende
+todas as teclas desde o início da linha até a posição atual (50% CPU: Q/W/E/R/T).
 A primeira tecla representa 5–15%, a segunda 16–25%, até 96–100% na última;
-abaixo de 5% a linha mantém o fundo. Acima de 90%, a indicação pisca.
+abaixo de 5% a linha mantém o fundo. Acima de 90%, a tecla ativa ou toda a
+barra preenchida pisca.
 O disco indica espaço usado no sistema de arquivos raiz. As leituras Linux
 atualizam aproximadamente a cada segundo enquanto o Smart está ligado.
 Notificações têm prioridade nas teclas em comum e a calibração RGB também se
